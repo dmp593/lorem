@@ -1,0 +1,4 @@
+data/
+docker-compose.yaml
+.env.example
+Makefile

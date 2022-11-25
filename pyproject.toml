@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "lorem"
+version = "0.1.0"
+description = "Lorem: A MockAPI using FastAPI and MongoDB"
+authors = ["Daniel Pinto <d.pinto@kigroup.de>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.7"
+fastapi = "^0.87.0"
+uvicorn = {extras = ["standard"], version = "^0.20.0"}
+motor = "^3.1.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
