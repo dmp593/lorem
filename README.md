@@ -94,12 +94,12 @@ You can combine multiple filters:
 2. By default, the page length is to return a maximum of 100 entities.
 Here are examples on how you can send override it:
 
-- ```GET localhost:<app-port>/dogs/?$limit=200```
-- ```GET localhost:<app-port>/dogs/?breed=border collie&$limit=200```
+- ```GET localhost:<app-port>/dogs/?__limit=200```
+- ```GET localhost:<app-port>/dogs/?breed=border collie&__limit=200```
 
 You can apply the offet too:
 
-- ```GET localhost:<app-port>/dogs/?$limit=200&$offet=100```
+- ```GET localhost:<app-port>/dogs/?__limit=200&__offet=100```
 
 ### Deleting resources
 
@@ -193,10 +193,14 @@ Thus, in order to test the inexistence of a field or a field that must be not nu
 
 #### TODO/Current Limitations
 
-1. All values in query parameters that can be parsed to numerical values, will be treated like so. There is no escape mechanism in this version.
+1. All values in query parameters that can be parsed to numerical values, will be treated like so. There is no escape mechanism for now.
 
-2. If you pass a value with commas, it will be treated as an array. Eg: colors=blue,green it will be a ['blue', 'green'].
-For these cases, each value in the array will always be a string. It's not converted automatically to a number, even if it's one.
+2. If you pass a value separated by commas, it will be treated as an array. Eg: ```colors=blue,green``` will parse as ```['blue', 'green']```.
+For each element in the array, the rule limitation 1 still applies. Eg: ```colors=blue,green,255``` will parse as ```['blue', 'green', 255]```.
+
+3. Do not send fields starting with a dot, double underscore or a dollar sign.
+The only fields allowed to start with double underscore are ```__limit``` and ```__offet```.
+
+4. For now, regarding pagination, when returning a collection, there is no metadata that tells you the count until now and total count of entities in the database.
+
 Keep in mind that these query limitations can impact your results.
-
-3. Do not send fields starting with a dot or a dollar sign. Only $limit and $offset are allowed.
