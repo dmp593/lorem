@@ -59,7 +59,46 @@ Where ```<app-port>``` is the port you have set in the .env (check ```APP_PORT``
 
 The ```<resource>``` is the web path parameters where you want to save this resource. You can have unlimited paths, as it fits best to you.
 
-#### NOTE: You  **can't** create define sub-resources like ```<resource>/<sub-resource>```
+#### NOTE
+
+You can pass an array of entities as well; it will insert many at once (bulk write).
+
+```POST localhost:<app-port>/canis-familiaris/``` with the payload you want to save. Eg:
+
+```json
+[
+    {
+        "breed": "Australian Shepherd",
+        "lifespan": "13 to 15 years",
+        "personality": "awesome"
+    },
+    {
+        "breed": "Bernese Mountain Dog",
+        "lifespan": "12 to 14 years",
+        "personality": "fullstack family devoted"
+    },
+    {
+        "breed": "Belgian Shepherd",
+        "lifespan": "12 to 15 years",
+        "personality": "olympic champ"
+    },
+    {
+        "breed": "Border Collie",
+        "lifespan": "12 to 14 years",
+        "personality": "sheep it"
+    },
+    {
+        "breed": "Dachshund",
+        "lifespan": "12 to 15 years",
+        "personality": "cunning hot"
+    },
+    {
+        "breed": "Siberian Husky",
+        "lifespan": "up to 12 years",
+        "personality": "are you my santa?"
+    }
+]
+```
 
 ### Retrieving resources
 
@@ -123,7 +162,7 @@ Finally, to drop all the entities on a resource, just call the DELETE without an
 For advanced usage on query parameters, you can specify the operand by separating it from the field name with double underscore.
 Usage: \<key\>_\_\<operand\>=\<value\>
 
-For example, get all the users greater id 100: ```GET localhost:<app-port>/users/?id__gt=100```
+For example, get all the dogs with the id greater then 100: ```GET localhost:<app-port>/dogs/?id__gt=100```
 
 Operands available:
 
@@ -161,18 +200,20 @@ Thus, having the structure:
 
 ```json
 {
-    "foo": {
-        "bar": {
-            "users": [
+    "canidae": {
+        "caninae": {
+            "canini": [
                 {
-                    "name": "dummy",
-                    "address": "somewhere in the planet",
-                    ...
+                    "name": "Zeus",
+                    "breed": "Rottweiler"
                 },
                 {
-                    "name": "smart",
-                    "address": "around the moon",
-                    ...
+                    "name": "Hercules",
+                    "breed": "Saint Bernard"
+                },
+                {
+                    "name": "Ares",
+                    "breed": "Pit Bull"
                 }
             ]
         }
@@ -180,8 +221,8 @@ Thus, having the structure:
 }
 ```
 
-To get the data of the second user, do:
-```GET localhost:<app-port>/dummies/foo.bar.users.1.name=smart```
+To get the all the strucutre where you know that there is one dog called Hercules as the second element, you can do:
+```GET localhost:<app-port>/animals/?canidae.caninae.canini.1.name=hercules```
 
 #### NOTE
 
@@ -194,13 +235,11 @@ Thus, in order to test the inexistence of a field or a field that must be not nu
 #### TODO/Current Limitations
 
 1. All values in query parameters that can be parsed to numerical values, will be treated like so. There is no escape mechanism for now.
-
-2. If you pass a value separated by commas, it will be treated as an array. Eg: ```colors=blue,green``` will parse as ```['blue', 'green']```.
-For each element in the array, the rule limitation 1 still applies. Eg: ```colors=blue,green,255``` will parse as ```['blue', 'green', 255]```.
-
-3. Do not send fields starting with a dot, double underscore or a dollar sign.
+2. You  **can't** create sub-resources, for example: ```localhost:<app-port>//canidae/caninae/canini/canina``` it's not allowed. Only the root resource is allowed (```canidae```).
+3. If you pass a value separated by commas, it will be treated as an array. Eg: ```colors=brown,gold``` will parse as ```['brown', 'gold']```.
+For each element in the array, the rule limitation 1 still applies. Eg: ```colors=brown,gold,255``` will parse as ```['brown', 'gold', 255]```.
+1. Do not send fields starting with a dot, double underscore or a dollar sign.
 The only fields allowed to start with double underscore are ```__limit``` and ```__offet```.
-
-4. For now, regarding pagination, when returning a collection, there is no metadata that tells you the count until now and total count of entities in the database.
+1. For now, regarding pagination, when returning a collection, there is no metadata that tells you the count until now and total count of entities in the database.
 
 Keep in mind that these query limitations can impact your results.
