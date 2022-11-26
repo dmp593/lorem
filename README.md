@@ -123,8 +123,6 @@ Finally, to drop all the entities on a resource, just call the DELETE without an
 
 - DELETE ```localhost:<app-port>/dogs/```
 
-
-
 ### Advanced Query Parameters
 
 For advanced usage on query parameters, you can specify some operands.
@@ -146,6 +144,7 @@ Operands available:
 - ```nin``` (value(s) not in array)
 
 #### NOTE
+
 For operands ```exists``` and ```isnull``` the truthful values are: true, TRUE, True, yes, YES, Yes, y and 1.
 Everything other than these values are considered false.
 
