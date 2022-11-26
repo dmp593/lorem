@@ -45,7 +45,7 @@ After that, you can also delete the ```data/``` folder.
 
 ### Creating a Resource
 
-Send a POST request to ```":<app-port>/<resource>/"``` with the payload you want to save. Eg:
+Send a POST request to ```"localhost:<app-port>/<resource>/"``` with the payload you want to save. Eg:
 
 ```json
 {
@@ -63,7 +63,7 @@ The ```<resource>``` is the web path parameters where you want to save this reso
 
 ### Retrieving resources
 
-Send GET request to ```":<app-port>/<resource>/"``` with the query parameters you want.
+Send GET request to ```"localhost:<app-port>/<resource>/"``` with the query parameters you want.
 
 For example, if you created the resource "dogs" with the json:
 
@@ -79,13 +79,13 @@ For example, if you created the resource "dogs" with the json:
 You then can query for any field.
 This requests are all valid:
 
-- GET ```:<app-port>/dogs/?breed=border collie```
-- GET ```:<app-port>/dogs/?size=medium```
-- GET ```:<app-port>/dogs/?height_in_kgs=30```
+- GET ```localhost:<app-port>/dogs/?breed=border collie```
+- GET ```localhost:<app-port>/dogs/?size=medium```
+- GET ```localhost:<app-port>/dogs/?height_in_kgs=30```
 
 You can combine multiple filters:
 
-- GET ```:<app-port>/dogs/?size=medium&height_in_kgs=30```
+- GET ```localhost:<app-port>/dogs/?size=medium&height_in_kgs=30```
 
 #### NOTES
 
@@ -94,8 +94,17 @@ You can combine multiple filters:
 2. By default, the page length is to return a maximum of 100 entities.
 Here are examples on how you can send override it:
 
-- GET ```:<app-port>/dogs/?_page_len_=200```
-- GET ```:<app-port>/dogs/?breed=border collie&_page_len_=200```
+- GET ```localhost:<app-port>/dogs/?$limit=200```
+- GET ```localhost:<app-port>/dogs/?breed=border collie&$limit=200```
+
+You can apply the offet too:
+
+- GET ```localhost:<app-port>/dogs/?$limit=200&$offet=100```
+
+You can indicate to the API to ignore the dollar sign '$' by putting double dollar signs '$$'.
+Thus, you can have entities with the field names ```$limit``` and ```$offset``` as well. Eg:
+
+- GET ```localhost:<app-port>/<resource>/?$$limit=foobar&$limit=200&$offet=100```
 
 ### Deleting resources
 
@@ -104,12 +113,50 @@ You can use query parameters in the same way you used in the GET request.
 
 Imagine that the dog as a pedigree code which you know it's unique oh that resource. You can do:
 
-- DELETE ```:<app-port>/dogs/?pedigree=<code>```
+- DELETE ```localhost:<app-port>/dogs/?pedigree=<code>```
 
 In the same way, you can delete a sub-set of entities in a resource. Eg: deleting all dogs of a breed:
 
-- DELETE ```:<app-port>/dogs/?breed=border collie```
+- DELETE ```localhost:<app-port>/dogs/?breed=border collie```
 
 Finally, to drop all the entities on a resource, just call the DELETE without any query parameter:
 
-- DELETE ```:<app-port>/dogs/```
+- DELETE ```localhost:<app-port>/dogs/```
+
+
+
+### Advanced Query Parameters
+
+For advanced usage on query parameters, you can specify some operands.
+Usage: <key>__<operand>=<value>
+
+For example, get all the users greater id 100: GET ```localhost:<app-port>/users/?id__gt=100```
+
+Operands available:
+
+- ```eq``` (equals)
+- ```ne``` (not equals)
+- ```exists``` (the value exists/is present in the entity)
+- ```isnull``` (the value exists and is null)
+- ```gt``` (greater then)
+- ```gte``` (greater then or equal)
+- ```lt``` (less then)
+- ```lte``` (less then or equal)
+- ```in``` (value(s) in array)
+- ```nin``` (value(s) not in array)
+
+#### NOTE
+For operands ```exists``` and ```isnull``` the truthful values are: true, TRUE, True, yes, YES, Yes, y and 1.
+Everything other than these values are considered false.
+
+Thus, in order to test the inexistence of a field or a field that must be not null, just do something like:
+GET ```localhost:<app-port>/dogs/?owner__isnull=0``` Gets all the dogs that have an owner :smiley:
+
+#### TODO/Current Limitations
+
+1. All values in query parameters that can be parsed to numerical values, will be treated like so. There is no escape mechanism in this version.
+
+2. If you pass a value with commas, it will be treated as an array. Eg: colors=blue,green it will be a ['blue', 'green'].
+For these cases, each value in the array will always be a string. It's not converted automatically to a number, even if it's one.
+
+Keep in mind that these query limitations can impact your results.

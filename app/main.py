@@ -5,29 +5,18 @@ from pymongo.results import InsertOneResult, DeleteResult
 from fastapi import FastAPI, Depends, Request, exceptions, status
 
 from dependencies import get_db_collection
-
+from filters import parse_query_params
 
 app = FastAPI()
 
 
 @app.get("/{collection}/")
 async def post(request: Request, collection: AsyncIOMotorCollection = Depends(get_db_collection)):
-    lookup = {}
+    query_params = parse_query_params(request)
 
-    for key, value in request.query_params.items():
-        if key == '_page_len_':
-            continue
+    cursor = collection.find(query_params['filters'], { '_id': 0 })
 
-        try:
-            lookup[key] = int(value)
-        except ValueError:
-            lookup[key] = value
-
-        # TODO add other filter options like array filters (query value in array)
-
-    cursor = collection.find(lookup, { '_id': 0 })
-
-    documents = await cursor.to_list(length=request.query_params.get('_page_len_', 100))
+    documents = await cursor.skip(query_params['offset']).to_list(query_params['limit'])
     return documents[0] if len(documents) == 1 else documents
 
 
