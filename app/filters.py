@@ -33,7 +33,7 @@ def parse_filters(raw_filters: Dict[str, Any]):
             value = to_number(value, converter=float, or_default=value)
         
         if operand == 'isnull':
-            filters[key] = { '$exists': True, '$eq' if is_truthful(value) else '$neq': None }
+            filters[key] = { '$exists': True, '$eq' if is_truthful(value) else '$ne': None }
         elif operand == 'exists':
             filters[key] = { '$exists': is_truthful(value) }
         elif operand == 'in' and not isinstance(value, list):
