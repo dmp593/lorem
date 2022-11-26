@@ -11,9 +11,7 @@ def parse_filters(raw_filters: Dict[str, Any]):
     filters = {}
 
     for key, value in raw_filters.items():
-        if key.startswith('$$'): # instruction to include the '$' sign, because it conflicts with the API. for example: $limit and $offset
-            key = key[1:]
-        elif key.startswith('$'):
+        if key.startswith(('$', '.')):
             continue
 
         key_and_operand = key.split('__', maxsplit=1)
