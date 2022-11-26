@@ -34,7 +34,7 @@ async def insert_many(documents: List[Any], db_collection: AsyncIOMotorCollectio
 
 
 async def insert_one(document: Any, db_collection: AsyncIOMotorCollection) -> List[Any]:
-    result: InsertManyResult = await db_collection.insert_one(document)
+    result: InsertOneResult = await db_collection.insert_one(document)
 
     if not result.acknowledged:
         raise exceptions.HTTPException(status.HTTP_400_BAD_REQUEST, 'Bad Request')
