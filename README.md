@@ -126,6 +126,36 @@ You can combine multiple filters:
 
 - ```GET localhost:<app-port>/dogs/?size=medium&height_in_kgs=30```
 
+The API implements smart find by id. In other words, tries to find by id if your entity has at least on of these (guessed) fields:
+
+- ```id```
+- ```uuid```
+- ```code```
+- ```pk```
+- ```username```
+- ```email```
+
+In this case, if your entity has one of these fields, you can retrieve by id has a path parameter, instead of a query parameter.
+
+Consider the following scenario:
+
+```json
+{
+    "pk": 1,
+    "breed": "german shepherd"
+}
+```
+
+Then, you can do:
+
+```GET localhost:<app-port>/dogs/{pk}```
+
+Which is roughly equivelent to:
+
+```GET localhost:<app-port>/dogs/?pk=1```
+
+You may use this for convinience, but keep in mind that the second approach is more efficient, since the first approach will apply an OR clause: it tries to find the *first* entity that has that value, on each possible field name.
+
 #### NOTES
 
 1. If the lookup you provided matches multiple entities, an array is returned. Else, the entity itself.
@@ -147,7 +177,11 @@ You can use query parameters in the same way you used in the GET request.
 
 Imagine that the dog as a pedigree code which you know it's unique oh that resource. You can do:
 
-- ```DELETE localhost:<app-port>/dogs/?pedigree=<code>```
+- ```DELETE localhost:<app-port>/dogs/?pedigree=<pedigree>```
+
+If your entity has a field name that is considered a smart id, alternatively you can do:
+
+- ```DELETE localhost:<app-port>/dogs/<code>/```
 
 In the same way, you can delete a sub-set of entities in a resource. Eg: deleting all dogs of a breed:
 

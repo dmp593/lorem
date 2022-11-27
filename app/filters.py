@@ -58,3 +58,12 @@ def parse_query_params(request: Request):
         query_params['offset'] = to_number(request.query_params['__offset'], or_default=query_params['offset'])
 
     return query_params
+
+
+def smart_find_by_id(id):
+    return {
+        "$or": [
+            { field_name: id }
+            for field_name in ('id', 'uuid', 'code', 'pk', 'username', 'email',)
+        ]
+    }

@@ -5,7 +5,7 @@ from pymongo.results import InsertOneResult, InsertManyResult, DeleteResult
 from fastapi import FastAPI, Depends, Request, exceptions, status
 
 from dependencies import get_db_collection
-from filters import parse_query_params
+from filters import smart_find_by_id, parse_query_params
 
 app = FastAPI()
 
@@ -19,6 +19,15 @@ async def post(request: Request, collection: AsyncIOMotorCollection = Depends(ge
     documents = await cursor.skip(query_params['offset']).to_list(query_params['limit'])
     return documents[0] if len(documents) == 1 else documents
 
+
+@app.get("/{collection}/{id}/")
+async def post(id: str, collection: AsyncIOMotorCollection = Depends(get_db_collection)):
+    document = await collection.find_one(smart_find_by_id(id), { '_id': 0 })
+
+    if not document:
+        raise exceptions.HTTPException(status.HTTP_404_NOT_FOUND, 'Not Found')
+
+    return document
 
 
 async def insert_many(documents: List[Any], db_collection: AsyncIOMotorCollection) -> List[Any]:
@@ -60,3 +69,13 @@ async def delete(request: Request, collection: AsyncIOMotorCollection = Depends(
     
     if not result.acknowledged:
         raise exceptions.HTTPException(status.HTTP_400_BAD_REQUEST, 'Bad Request')
+
+
+@app.delete("/{collection}/{id}/", status_code=status.HTTP_204_NO_CONTENT)
+async def post(id: str, collection: AsyncIOMotorCollection = Depends(get_db_collection)):
+    document = await collection.delete_one(smart_find_by_id(id), { '_id': 0 })
+
+    if not document:
+        raise exceptions.HTTPException(status.HTTP_404_NOT_FOUND, 'Not Found')
+
+    return document
