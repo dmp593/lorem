@@ -156,6 +156,12 @@ Which is roughly equivelent to:
 
 You may use this for convinience, but keep in mind that the second approach is more efficient, since the first approach will apply an OR clause: it tries to find the *first* entity that has that value, on each possible field name.
 
+#### IMPORTANT
+
+The MockAPI doesn't stop you for having duplicated entries for same "smart" ids. You must ensure the uniqueness of your data.
+
+If you have duplicated entries, with the first approach (smart find by id) it will retrieve the *first* found. If you want to retrieve all duplicated information, please use the second approach, it will return an array of entities with the same id.
+
 #### NOTES
 
 1. If the lookup you provided matches multiple entities, an array is returned. Else, the entity itself.
@@ -190,6 +196,12 @@ In the same way, you can delete a sub-set of entities in a resource. Eg: deletin
 Finally, to drop all the entities on a resource, just call the DELETE without any query parameter:
 
 - ```DELETE localhost:<app-port>/dogs/```
+
+#### IMPORTANT
+
+The MockAPI doesn't stop you for having duplicated entries for same "smart" ids. You must ensure the uniqueness of your data.
+
+If you have duplicated entries, with the second approach of DELETE, it will delete the *first* found with that "smart" id. If you want to delete all duplicated information for the same "smart" id, please use the first approach.
 
 ### Advanced Query Parameters
 
@@ -269,11 +281,12 @@ Thus, in order to test the inexistence of a field or a field that must be not nu
 #### TODO/Current Limitations
 
 1. All values in query parameters that can be parsed to numerical values, will be treated like so. There is no escape mechanism for now.
-2. You  **can't** create sub-resources, for example: ```localhost:<app-port>//canidae/caninae/canini/canina``` it's not allowed. Only the root resource is allowed (```canidae```).
+2. You  **can't** create sub-resources, for example: ```localhost:<app-port>/canidae/caninae/canini/canina``` it's not allowed.
+Only the root resource is allowed (```canidae```). The second resource will be treated as id. The rest of the paths don't make any sense for the MockAPI. It will not work.
 3. If you pass a value separated by commas, it will be treated as an array. Eg: ```colors=brown,gold``` will parse as ```['brown', 'gold']```.
 For each element in the array, the rule limitation 1 still applies. Eg: ```colors=brown,gold,255``` will parse as ```['brown', 'gold', 255]```.
-1. Do not send fields starting with a dot, double underscore or a dollar sign.
+4. Do not send fields starting with a dot, double underscore or a dollar sign.
 The only fields allowed to start with double underscore are ```__limit``` and ```__offet```.
-1. For now, regarding pagination, when returning a collection, there is no metadata that tells you the count until now and total count of entities in the database.
+5. For now, regarding pagination, when returning a collection, there is no metadata that tells you the count until now and total count of entities in the database.
 
 Keep in mind that these query limitations can impact your results.
