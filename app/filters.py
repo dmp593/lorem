@@ -8,6 +8,12 @@ from fastapi import exceptions, Request, status
 __allowed_filter_operators__ = [
     'eq',
     'ne',
+    'gt',
+    'gte',
+    'lt',
+    'lte',
+    'in',
+    'nin',
     'exists',
     'contains',
     'icontains',
@@ -16,12 +22,6 @@ __allowed_filter_operators__ = [
     'endswith',
     'iendswith',
     'isnull',
-    'gt',
-    'gte',
-    'lt',
-    'lte',
-    'in',
-    'nin',
 ]
 
 
