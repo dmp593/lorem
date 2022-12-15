@@ -7,6 +7,7 @@ from fastapi import FastAPI, Depends, Request, exceptions, status
 from dependencies import get_db_collection
 from filters import smart_find_by_id, parse_query_params
 
+
 app = FastAPI()
 
 
