@@ -10,7 +10,7 @@ services:
       - 27017:${DB_PORT}
     volumes:
       - ./data/db:/data/db
-  mongo-express:
+  mongo-ui:
     image: mongo-express
     restart: unless-stopped
     ports:
@@ -19,7 +19,7 @@ services:
       ME_CONFIG_MONGODB_ADMINUSERNAME: ${DB_USER}
       ME_CONFIG_MONGODB_ADMINPASSWORD: ${DB_PASS}
       ME_CONFIG_MONGODB_URL: mongodb://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/
-  mock-api:
+  api:
     build: .
     volumes:
       - ./app:/app
