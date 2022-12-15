@@ -1,6 +1,28 @@
+import re
+
 from typing import Any, Dict
 
-from fastapi import Request
+from fastapi import exceptions, Request, status
+
+
+__allowed_filter_operators__ = [
+    'eq',
+    'ne',
+    'exists',
+    'contains',
+    'icontains',
+    'startswith',
+    'istartswith',
+    'endswith',
+    'iendswith',
+    'isnull',
+    'gt',
+    'gte',
+    'lt',
+    'lte',
+    'in',
+    'nin',
+]
 
 
 def is_truthful(value):
@@ -21,25 +43,45 @@ def parse_filters(raw_filters: Dict[str, Any]):
         if key.startswith('__'):
             continue
 
-        key_and_operand = key.split('__', maxsplit=1)
-        operand = 'eq'
+        key_and_operator = key.split('__', maxsplit=1)
+        operator = 'eq'
 
-        if len(key_and_operand) == 2:
-            key, operand = key_and_operand
-            
+        if len(key_and_operator) == 2:
+            key, operator = key_and_operator
+
+        if operator not in __allowed_filter_operators__:
+            allowed_filters_msg = ', '.join(__allowed_filter_operators__)
+
+            raise exceptions.HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid filter operator: '{operator}'. Allowed: {allowed_filters_msg}"
+            )
+        
         if ',' in value:
             value = [to_number(v, converter=float, or_default=v) for v in value.split(',')]
         else:
             value = to_number(value, converter=float, or_default=value)
         
-        if operand == 'isnull':
+        if operator == 'isnull':
             filters[key] = { '$exists': True, '$eq' if is_truthful(value) else '$ne': None }
-        elif operand == 'exists':
+        elif operator == 'exists':
             filters[key] = { '$exists': is_truthful(value) }
-        elif operand == 'in' and not isinstance(value, list):
-            filters[key] = { f'${operand}': [value] }
+        elif operator == 'in' and not isinstance(value, list):
+            filters[key] = { f'${operator}': [value] }
+        elif operator in ['startswith', 'istartswith', 'contains', 'icontains', 'endswith', 'iendswith']:
+            flags = re.RegexFlag.ASCII
+
+            if operator.startswith('i'):
+                flags, operator = re.IGNORECASE, operator[1:]
+            
+            if operator == 'startswith':
+                value = f"^{value}"
+            elif operator == 'endswith':
+                value = f"{value}$"
+
+            filters[key] = { '$regex': re.compile(value, flags), }
         else:
-            filters[key] = { f'${operand}': value }
+            filters[key] = { f'${operator}': value }
 
     return filters
 

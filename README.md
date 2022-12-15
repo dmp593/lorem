@@ -205,15 +205,21 @@ If you have duplicated entries, with the second approach of DELETE, it will dele
 
 ### Advanced Query Parameters
 
-For advanced usage on query parameters, you can specify the operand by separating it from the field name with double underscore.
-Usage: \<key\>_\_\<operand\>=\<value\>
+For advanced usage on query parameters, you can specify the operator by separating it from the field name with double underscore.
+Usage: \<key\>_\_\<operator\>=\<value\>
 
 For example, get all the dogs with the id greater then 100: ```GET localhost:<app-port>/dogs/?id__gt=100```
 
-Operands available:
+Operators available:
 
 - ```eq``` (equals)
 - ```ne``` (not equals)
+- ```startswith``` (string starts with)
+- ```istartswith``` (string starts with [case insensitive])
+- ```contains``` (contains string)
+- ```icontains``` (contains string [case insensitive])
+- ```endswith``` (string ends with)
+- ```iendswith``` (string ends with [case insensitive])
 - ```exists``` (the value exists/is present in the entity)
 - ```isnull``` (the value exists and is null)
 - ```gt``` (greater then)
@@ -272,7 +278,7 @@ To get the all the strucutre where you know that there is one dog called Hercule
 
 #### NOTE
 
-For operands ```exists``` and ```isnull``` the truthful values are: true, TRUE, True, yes, YES, Yes, y and 1.
+For operators ```exists``` and ```isnull``` the truthful values are: true, TRUE, True, yes, YES, Yes, y and 1.
 Everything other than these values are considered false.
 
 Thus, in order to test the inexistence of a field or a field that must be not null, just do something like:
