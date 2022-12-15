@@ -2,10 +2,12 @@ import re
 
 from typing import Any, Dict
 
-from fastapi import exceptions, Request, status
+from exceptions import BadRequest
+
+from fastapi import Request
 
 
-__allowed_filter_operators__ = [
+__ALLOWED_FILTER_OPERATORS__ = [
     'eq',
     'ne',
     'gt',
@@ -49,13 +51,9 @@ def parse_filters(raw_filters: Dict[str, Any]):
         if len(key_and_operator) == 2:
             key, operator = key_and_operator
 
-        if operator not in __allowed_filter_operators__:
-            allowed_filters_msg = ', '.join(__allowed_filter_operators__)
-
-            raise exceptions.HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Invalid filter operator: '{operator}'. Allowed: {allowed_filters_msg}"
-            )
+        if operator not in __ALLOWED_FILTER_OPERATORS__:
+            allowed_ops = ', '.join(__ALLOWED_FILTER_OPERATORS__)
+            raise BadRequest(f"Invalid filter operator: '{operator}'. Allowed: {allowed_ops}")
         
         if ',' in value:
             value = [to_number(v, converter=float, or_default=v) for v in value.split(',')]

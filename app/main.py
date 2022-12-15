@@ -2,7 +2,9 @@ from typing import Any, List
 
 from motor.motor_asyncio import AsyncIOMotorCollection
 from pymongo.results import InsertOneResult, InsertManyResult, DeleteResult
-from fastapi import FastAPI, Depends, Request, exceptions, status
+from fastapi import FastAPI, Depends, Request, status
+
+import exceptions
 
 from dependencies import get_db_collection
 from filters import smart_find_by_id, parse_query_params
@@ -26,7 +28,7 @@ async def post(id: str, collection: AsyncIOMotorCollection = Depends(get_db_coll
     document = await collection.find_one(smart_find_by_id(id), { '_id': 0 })
 
     if not document:
-        raise exceptions.HTTPException(status.HTTP_404_NOT_FOUND, 'Not Found')
+        raise exceptions.NotFound()
 
     return document
 
@@ -35,7 +37,7 @@ async def insert_many(documents: List[Any], db_collection: AsyncIOMotorCollectio
     result: InsertManyResult = await db_collection.insert_many(documents)
 
     if not result.acknowledged:
-        raise exceptions.HTTPException(status.HTTP_400_BAD_REQUEST, 'Bad Request')
+        raise exceptions.BadRequest()
 
     for document in documents:
         document.pop('_id')
@@ -47,7 +49,7 @@ async def insert_one(document: Any, db_collection: AsyncIOMotorCollection) -> Li
     result: InsertOneResult = await db_collection.insert_one(document)
 
     if not result.acknowledged:
-        raise exceptions.HTTPException(status.HTTP_400_BAD_REQUEST, 'Bad Request')
+        raise exceptions.BadRequest()
 
     document.pop('_id')
     return document
@@ -69,7 +71,7 @@ async def delete(request: Request, collection: AsyncIOMotorCollection = Depends(
     result: DeleteResult = await collection.delete_many(request.query_params)
     
     if not result.acknowledged:
-        raise exceptions.HTTPException(status.HTTP_400_BAD_REQUEST, 'Bad Request')
+        raise exceptions.BadRequest()
 
 
 @app.delete("/{collection}/{id}/", status_code=status.HTTP_204_NO_CONTENT)
@@ -77,6 +79,6 @@ async def post(id: str, collection: AsyncIOMotorCollection = Depends(get_db_coll
     document = await collection.delete_one(smart_find_by_id(id), { '_id': 0 })
 
     if not document:
-        raise exceptions.HTTPException(status.HTTP_404_NOT_FOUND, 'Not Found')
+        raise exceptions.NotFound()
 
     return document
