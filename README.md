@@ -214,6 +214,7 @@ Operators available:
 
 - ```eq``` (equals)
 - ```ne``` (not equals)
+- ```neq``` (not equals [alias of ```ne```])
 - ```startswith``` (string starts with)
 - ```istartswith``` (string starts with [case insensitive])
 - ```contains``` (contains string)
@@ -221,13 +222,20 @@ Operators available:
 - ```endswith``` (string ends with)
 - ```iendswith``` (string ends with [case insensitive])
 - ```exists``` (the value exists/is present in the entity)
-- ```isnull``` (the value exists and is null)
+- ```nexists``` (the value not exists/is present in the entity)
+- ```notexists``` (the value not exists/is present in the entity [alias of ```nexists```])
+- ```null``` (the value exists and is null)
+- ```isnull``` (the value exists and is null [alias of ```null```])
+- ```notnull``` (the value exists and is not null)
+- ```isnotnull``` (the value exists and is not null [alias of ```notnull```])
 - ```gt``` (greater then)
 - ```gte``` (greater then or equal)
 - ```lt``` (less then)
 - ```lte``` (less then or equal)
 - ```in``` (value(s) in array)
 - ```nin``` (value(s) not in array)
+- ```notin``` (value(s) not in array [alias of ```nin```])
+
 
 #### Querying nested objects or arrays
 

@@ -100,12 +100,12 @@ class In(ListFilter):
         return {self.key: {"$in": self.value__list}}
 
 
-class Nin(ListFilter):
+class NotIn(ListFilter):
     def __call__(self) -> dict[str, dict[str, Any]]:
         return {self.key: {"$nin": self.value__list}}
 
 
-class Exists(Filter):
+class BooleanFilter(Filter):
     def __init__(self, key: str, value: bool | int | str = True) -> None:
         super().__init__(key, value)
 
@@ -114,26 +114,47 @@ class Exists(Filter):
         if isinstance(self.value, bool):
             return self.value
 
-        if isinstance(self.value, int):
-            return self.value == 1
+        if isinstance(self.value, (int, float)):
+            return self.value != 0
 
         if isinstance(self.value, str):
-            return self.value.lower() in ['true', 'yes', 'y', '1']
+            value_ = self.value.lower()
+            
+            if value_ in ['true', 'yes', 'y', '1', '']:
+                return True    
+            elif value_ in ['false', 'no', 'n', '0']:
+                return False
+        
+        raise ValueError(f"'{self.value}' is not a valid boolean value")
 
-        raise ValueError(f"{self.value}: not a valid boolean value")
-
+class Exists(BooleanFilter):
     def __call__(self) -> dict[str, dict[str, bool]]:
         return {self.key: {"$exists": self.value__bool}}
 
 
-class IsNull(Exists):
+class NotExists(Exists):
+    def __call__(self) -> dict[str, dict[str, bool]]:
+        return {self.key: {"$exists": not self.value__bool}}
+
+
+class IsNull(BooleanFilter):
     def __call__(self) -> And:
         is_null = And(
-            super().__call__(),
+            Exists(self.key, True),
             (Eq if self.value__bool else Ne)(self.key, None)
         )
 
         return is_null()
+
+
+class IsNotNull(BooleanFilter):
+    def __call__(self) -> And:
+        is_not_null = And(
+            Exists(self.key, True),
+            (Ne if self.value__bool else Eq)(self.key, None)
+        )
+
+        return is_not_null()
 
 
 class RegexFilter(Filter):
@@ -169,46 +190,57 @@ class FiltersRegistry:
     _filters = {
         'eq': Eq,
         'ne': Ne,
+        'neq': Ne,
         'gt': Gt,
         'gte': Gte,
         'lt': Lt,
         'lte': Lte,
         'in': In,
-        'nin': Nin,
+        'nin': NotIn,
+        'notin': NotIn,
         'exists': Exists,
+        'nexists': NotExists,
+        'notexists': NotExists,
         'contains': Contains,
         'icontains': lambda k, v: Contains(k, v, flags=re.IGNORECASE),
         'startswith': StartsWith,
         'istartswith': lambda k, v: StartsWith(k, v, flags=re.IGNORECASE),
         'endswith': EndsWith,
         'iendswith': lambda k, v: EndsWith(k, v, flags=re.IGNORECASE),
-        'isnull': IsNull
+        'null': IsNull,
+        'isnull': IsNull,
+        'notnull': IsNotNull,
+        'isnotnull': IsNotNull,
     }
-
-    @classmethod
-    def invalidate(cls, operator: str):
-        allowed_operators = ', '.join(cls._filters.keys())
-        raise BadRequest(f"Invalid filter operator: '{operator}'. Allowed: {allowed_operators}")
-        
 
     @classmethod
     def parse(cls, entries: Dict[str, Any]):
         builder = {}
         
-        for key, value in entries.items():
+        for query_param in entries.items():
+            key, value = query_param
+
             if key.startswith('__'):
                 continue
 
-            key_and_operator = key.split('__', maxsplit=1)
             operator = 'eq'
 
-            if len(key_and_operator) == 2:
-                key, operator = key_and_operator
+            if '__' in key:
+                key, operator = key.split('__', maxsplit=1)
 
-            filter_cls = cls._filters.get(operator, lambda: cls.invalidate)
-            filter_ = filter_cls(key, value)
+            try:
+                filter_cls = cls._filters.get(operator)
 
-            builder.update(filter_())
+                if not filter_cls:
+                    allowed_operators = ', '.join(cls._filters.keys())
+                    raise BadRequest(f"Invalid filter operator: '{operator}'. Allowed: {allowed_operators}")
+
+                filter_ = filter_cls(key, value)
+
+                builder.update(filter_())
+            except ValueError as e: # TODO create FilterError
+                raise BadRequest(f"({query_param[0]}={query_param[1]}) {e}")
+
 
         return builder
 
