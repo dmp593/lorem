@@ -241,7 +241,6 @@ class FiltersRegistry:
             except ValueError as e: # TODO create FilterError
                 raise BadRequest(f"({query_param[0]}={query_param[1]}) {e}")
 
-
         return builder
 
 
