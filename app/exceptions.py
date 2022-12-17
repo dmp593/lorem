@@ -11,6 +11,11 @@ class BadRequest(exceptions.HTTPException):
         super().__init__(status.HTTP_400_BAD_REQUEST, detail, headers)
 
 
+class Conflict(exceptions.HTTPException):
+    def __init__(self, detail: Any = "Conflict", headers: Headers = None) -> None:
+        super().__init__(status.HTTP_409_CONFLICT, detail, headers)
+
+
 class NotFound(exceptions.HTTPException):
     def __init__(self, detail: Any = "Not Found", headers: Headers = None) -> None:
         super().__init__(status.HTTP_404_NOT_FOUND, detail, headers)

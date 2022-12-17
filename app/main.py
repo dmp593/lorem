@@ -1,6 +1,9 @@
 from typing import Any, List
 
+import pymongo
+
 from motor.motor_asyncio import AsyncIOMotorCollection
+from pymongo import errors as pymongo_errors
 from pymongo.results import InsertOneResult, InsertManyResult, DeleteResult
 from fastapi import FastAPI, Depends, Request, status
 
@@ -8,6 +11,7 @@ import exceptions
 
 from dependencies import get_db_collection
 from filters import smart_find_by_id, parse_query_params
+from schemas import IndexRequest
 
 
 app = FastAPI()
@@ -21,6 +25,41 @@ async def post(request: Request, collection: AsyncIOMotorCollection = Depends(ge
 
     documents = await cursor.skip(query_params['offset']).to_list(query_params['limit'])
     return documents[0] if len(documents) == 1 else documents
+
+
+
+@app.get("/{collection}/__index/", status_code=status.HTTP_200_OK)
+async def get_index(collection: AsyncIOMotorCollection = Depends(get_db_collection)):
+    indexes = await collection.index_information()
+    return indexes.keys()
+
+
+@app.post("/{collection}/__index/", status_code=status.HTTP_201_CREATED)
+async def create_index(index: IndexRequest, collection: AsyncIOMotorCollection = Depends(get_db_collection)):
+    for k, v in index.keys.items():
+        match v.lower():
+            case 'asc' | 'ascending' | '1':
+                index.keys[k] = pymongo.ASCENDING
+            case 'desc' | 'descending' | '-1':
+                index.keys[k] = pymongo.DESCENDING
+            case 'geo2d' | '2d':
+                index.keys[k] = pymongo.GEO2D
+            case 'geo' | 'geosphere' | '2dsphere':
+                index.keys[k] = pymongo.GEOSPHERE
+            case 'hash' | 'hashed':
+                index.keys[k] = pymongo.HASHED
+            case 'txt' | 'text':
+                index.keys[k] = pymongo.TEXT
+            case _:
+                raise exceptions.BadRequest("Invalid index configuration")
+    
+    try:
+        return await collection.create_index(
+            index.keys.items(),
+            unique=index.unique
+        )
+    except pymongo_errors.OperationFailure:
+        raise exceptions.BadRequest()
 
 
 @app.get("/{collection}/{id}/")
