@@ -38,8 +38,11 @@ class GroupFilter(Filter):
     def __init__(self, key: GroupType, *value: Filter) -> None:
         super().__init__(key.value, value)
 
-    def __call__(self) -> dict[str, Any]:
-        print(self.value)
+    def __lshift__(self, rhs) -> Self:
+        self.value.append(rhs)
+        return self
+
+    def __get__(self, instance=None, owner=None) -> dict[str, Any]:
         return {self.key: [value() for value in self.value]}
 
 class And(GroupFilter):
@@ -237,7 +240,7 @@ class FiltersRegistry:
 
                 filter_ = filter_cls(key, value)
 
-                builder.update(filter_())
+                builder += filter_()
             except ValueError as e: # TODO create FilterError
                 raise BadRequest(f"({query_param[0]}={query_param[1]}) {e}")
 
@@ -253,7 +256,6 @@ def parse_query_params(request: Request):
 
 
 def smart_find_by_id(id):
-    id_filters = [Eq(key, id) for key in __ID_PATHS__]
-    or_filter = Or(*id_filters)
-    
-    return or_filter()
+    or_filter = Or()
+    [or_filter << Eq(key, id) for key in __ID_PATHS__]
+    return or_filter
