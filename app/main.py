@@ -6,6 +6,7 @@ from motor.motor_asyncio import AsyncIOMotorCollection
 from pymongo import errors as pymongo_errors
 from pymongo.results import InsertOneResult, InsertManyResult, DeleteResult
 from fastapi import FastAPI, Depends, Request, status
+from fastapi.middleware.cors import CORSMiddleware
 
 import exceptions
 
@@ -15,6 +16,14 @@ from schemas import IndexRequest
 
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+    allow_credentials=True,
+)
 
 
 @app.get("/{collection}/")
