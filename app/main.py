@@ -3,6 +3,7 @@ from typing import Any, List
 from motor.motor_asyncio import AsyncIOMotorCollection
 from pymongo.results import InsertOneResult, InsertManyResult, DeleteResult
 from fastapi import FastAPI, Depends, Request, status
+from fastapi.middleware.cors import CORSMiddleware
 
 import exceptions
 
@@ -11,6 +12,14 @@ from filters import smart_find_by_id, parse_query_params
 
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+    allow_credentials=True,
+)
 
 
 @app.get("/{collection}/")
