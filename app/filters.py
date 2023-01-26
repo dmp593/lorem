@@ -4,7 +4,7 @@ from enum import StrEnum
 from typing import Any, Dict, Self
 from fastapi import Request
 
-from exceptions import BadRequest
+from app.exceptions import BadRequest
 
 
 __ID_PATHS__ = ('id', 'uuid', 'code', 'pk', 'username', 'email',)
@@ -92,7 +92,7 @@ class ListFilter(Filter):
         if isinstance(value, list):
             return value
 
-        if "," in value:
+        if isinstance(value, str) and "," in value:
             value = [tonum(v, default=v) for v in value.split(",")]
         
         return [value]

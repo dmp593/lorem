@@ -5,10 +5,10 @@ from pymongo.results import InsertOneResult, InsertManyResult, DeleteResult
 from fastapi import FastAPI, Depends, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 
-import exceptions
+from app import exceptions
 
-from dependencies import get_db_collection
-from filters import smart_find_by_id, parse_query_params
+from app.dependencies import get_db_collection
+from app.filters import smart_find_by_id, parse_query_params
 
 
 app = FastAPI()
