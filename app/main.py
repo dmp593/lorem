@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app import exceptions
 
 from app.dependencies import get_db_collection
-from app.filters import smart_find_by_id, parse_query_params
+from app.filters import smart_find, parse_query_params
 
 
 app = FastAPI()
@@ -34,7 +34,7 @@ async def post(request: Request, collection: AsyncIOMotorCollection = Depends(ge
 
 @app.get("/{collection}/{id}/")
 async def post(id: str, collection: AsyncIOMotorCollection = Depends(get_db_collection)):
-    document = await collection.find_one(smart_find_by_id(id), { '_id': 0 })
+    document = await collection.find_one(smart_find(id), { '_id': 0 })
 
     if not document:
         raise exceptions.NotFound()
@@ -85,7 +85,7 @@ async def delete(request: Request, collection: AsyncIOMotorCollection = Depends(
 
 @app.delete("/{collection}/{id}/", status_code=status.HTTP_204_NO_CONTENT)
 async def post(id: str, collection: AsyncIOMotorCollection = Depends(get_db_collection)):
-    document = await collection.delete_one(smart_find_by_id(id), { '_id': 0 })
+    document = await collection.delete_one(smart_find(id), { '_id': 0 })
 
     if not document:
         raise exceptions.NotFound()

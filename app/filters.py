@@ -1,16 +1,16 @@
 import re
 
 from enum import StrEnum
-from typing import Any, Dict, Self
+from typing import Self
 from fastapi import Request
 
 from app.exceptions import BadRequest
 
 
-__ID_PATHS__ = ('id', 'uuid', 'code', 'pk', 'username', 'email',)
+__ID_PATHS__ = ('id', 'uuid', 'uid', 'code', 'pk', 'username', 'email', 'vat',)
 
 
-def tonum(value: Any, default: int | None = None, converter: int | float = int):
+def tonum(value: any, default: int | None = None, converter: int | float = int):
     if isinstance(value, converter):
         return value
     
@@ -21,11 +21,11 @@ def tonum(value: Any, default: int | None = None, converter: int | float = int):
 
 
 class Filter:
-    def __init__(self, key: str, value: Any) -> None:
+    def __init__(self, key: str, value: any) -> None:
         self.key = key
         self.value = value
 
-    def __call__(self) -> dict[str, Any]:
+    def __call__(self) -> dict[str, any]:
         return {self.key: self.value}
 
 
@@ -42,7 +42,7 @@ class GroupFilter(Filter):
         self.value.append(rhs)
         return self
 
-    def __get__(self, instance=None, owner=None) -> dict[str, Any]:
+    def __call__(self) -> dict[str, any]:
         return {self.key: [value() for value in self.value]}
 
 class And(GroupFilter):
@@ -55,32 +55,32 @@ class Or(GroupFilter):
 
 
 class Eq(Filter):
-    def __call__(self) -> dict[str, dict[str, Any]]:
+    def __call__(self) -> dict[str, dict[str, any]]:
         return {self.key: {"$eq": self.value}}
 
 
 class Ne(Filter):
-    def __call__(self) -> dict[str, dict[str, Any]]:
+    def __call__(self) -> dict[str, dict[str, any]]:
         return {self.key: {"$ne": self.value}}
 
 
 class Gt(Filter):
-    def __call__(self) -> dict[str, dict[str, Any]]:
+    def __call__(self) -> dict[str, dict[str, any]]:
         return {self.key: {"$gt", self.value}}
 
 
 class Gte(Filter):
-    def __call__(self) -> dict[str, dict[str, Any]]:
+    def __call__(self) -> dict[str, dict[str, any]]:
         return {self.key: {"$gte", self.value}}
 
 
 class Lt(Filter):
-    def __call__(self) -> dict[str, dict[str, Any]]:
+    def __call__(self) -> dict[str, dict[str, any]]:
         return {self.key: {"$lt", self.value}}
 
 
 class Lte(Filter):
-    def __call__(self) -> dict[str, dict[str, Any]]:
+    def __call__(self) -> dict[str, dict[str, any]]:
         return {self.key: {"$lte", self.value}}
 
 
@@ -99,12 +99,12 @@ class ListFilter(Filter):
 
 
 class In(ListFilter):
-    def __call__(self) -> dict[str, dict[str, Any]]:
+    def __call__(self) -> dict[str, dict[str, any]]:
         return {self.key: {"$in": self.value__list}}
 
 
 class NotIn(ListFilter):
-    def __call__(self) -> dict[str, dict[str, Any]]:
+    def __call__(self) -> dict[str, dict[str, any]]:
         return {self.key: {"$nin": self.value__list}}
 
 
@@ -217,7 +217,7 @@ class FiltersRegistry:
     }
 
     @classmethod
-    def parse(cls, entries: Dict[str, Any]):
+    def parse(cls, entries: dict[str, any]):
         builder = {}
         
         for query_param in entries.items():
@@ -255,7 +255,7 @@ def parse_query_params(request: Request):
     }
 
 
-def smart_find_by_id(id):
-    or_filter = Or()
-    [or_filter << Eq(key, id) for key in __ID_PATHS__]
-    return or_filter
+def smart_find(id):
+    filters = [Eq(key, id) for key in __ID_PATHS__]
+    or_filter = Or(*filters)
+    return or_filter()
