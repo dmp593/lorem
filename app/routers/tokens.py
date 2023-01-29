@@ -1,5 +1,3 @@
-import asyncio
-
 from fastapi import APIRouter, Depends
 from motor.motor_asyncio import AsyncIOMotorClient
 

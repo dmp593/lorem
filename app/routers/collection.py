@@ -6,25 +6,19 @@ from motor.motor_asyncio import AsyncIOMotorCollection
 from pymongo.results import InsertOneResult, InsertManyResult, DeleteResult
 from fastapi import Depends, Request, status
 
-import re
-
 from fastapi import Depends
 
 from app import exceptions
 
-from app.dependencies import get_collection
+from app.dependencies import get_collection, verify_collection_name
 from app.filters import smart_find, parse_query_params
 
 
-def verify_collection_name(request: Request):
-    collection = request.url.path.split('/')[1]
 
-    if not re.match(r"^\w+$", collection):
-        raise exceptions.Forbidden("Invalid resource name. Only alphanumeric characters allowed.")
 
 
 router = APIRouter(
-    dependencies=[Depends(verify_collection_name)]
+    dependencies=[Depends(verify_collection_name(path_index=1))]
 )
 
 

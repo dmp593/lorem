@@ -6,7 +6,7 @@ from pymongo import errors as pymongo_errors
 from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorCollection
 
 from app import exceptions
-from app.dependencies import get_collection, get_db
+from app.dependencies import get_collection, get_db, verify_collection_name
 from app.schemas import indexes
 
 
@@ -15,6 +15,10 @@ router = APIRouter(prefix="/@indexes", tags=["indexes"])
 
 async def get_indexes(collection: AsyncIOMotorCollection):
     col_indexes = await collection.index_information()
+
+    if len(col_indexes) == 0:
+        return {}
+
     col_indexes.pop('_id_')
 
     indexes = {}
@@ -22,7 +26,7 @@ async def get_indexes(collection: AsyncIOMotorCollection):
     for key, val in col_indexes.items():
         fields = {field: "asc" if order == 1 else "desc" for field, order in val['key']}
         unique = val['unique']
-        
+
         indexes[key] = {'fields': fields, 'unique': unique}
 
     return indexes
@@ -40,12 +44,12 @@ async def list_all_indexes(db: AsyncIOMotorDatabase = Depends(get_db)):
     return indexes
 
 
-@router.get("/{collection}", status_code=status.HTTP_200_OK)
+@router.get("/{collection}", status_code=status.HTTP_200_OK, dependencies=[Depends(verify_collection_name(path_index=2))])
 async def list_collection_indexes(collection: AsyncIOMotorCollection = Depends(get_collection)):
     return await get_indexes(collection)
 
 
-@router.patch("/{collection}", status_code=status.HTTP_201_CREATED)
+@router.patch("/{collection}", status_code=status.HTTP_201_CREATED, dependencies=[Depends(verify_collection_name(path_index=2))])
 async def create(index: indexes.IndexRequest, collection: AsyncIOMotorCollection = Depends(get_collection)):
     if isinstance(index.keys, list):
         index.keys = {key: "asc" for key in index.keys}

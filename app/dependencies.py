@@ -1,10 +1,13 @@
 import os
+import inspect
+import typing
 
 from functools import cache
 
-from fastapi import Depends
+from fastapi import Depends, Request
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection, AsyncIOMotorDatabase
 
+from app import exceptions, routers
 from app.token import TokenHeader
 
 
@@ -32,3 +35,16 @@ def get_db(client: AsyncIOMotorClient = Depends(get_client), x_token: str = Toke
 
 def get_collection(collection: str, db: AsyncIOMotorDatabase = Depends(get_db)) -> AsyncIOMotorCollection:
     return db[collection]
+
+
+def verify_collection_name(path_index: int) -> typing.Callable[[Request,], None]:
+    def wrapper(request: Request):
+        system_routers = [r.router for _, r in inspect.getmembers(routers, inspect.ismodule)]
+
+        collection = request.url.path.split('/')[path_index]
+        system_prefixes = [r.prefix[1:] for r in system_routers if r.prefix]
+
+        if collection in system_prefixes:
+            raise exceptions.Forbidden(f"Invalid resource name: {collection}. Please favor strict alphanumeric characters.")  
+    
+    return wrapper
