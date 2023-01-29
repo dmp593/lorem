@@ -2,17 +2,10 @@ import os
 
 from functools import cache
 
-from fastapi import Header, Depends
+from fastapi import Depends
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection, AsyncIOMotorDatabase
 
-
-HeaderToken = Header(
-    min_length=24, # forbids the access to system dbs (admin, local, config) and protects against brute-force
-    max_length=63, # https://www.mongodb.com/docs/manual/reference/limits/#mongodb-limit-Length-of-Database-Names
-    # https://www.mongodb.com/docs/manual/reference/limits/#mongodb-limit-Restrictions-on-Database-Names-for-Unix-and-Linux-Systems
-    regex=r'^\w*$',
-    title="Authorization Token to access your private database."
-)
+from app.token import TokenHeader
 
 
 @cache
@@ -33,7 +26,7 @@ def get_client(conn_str: str = Depends(get_mongodb_connection_str)) -> AsyncIOMo
     return AsyncIOMotorClient(conn_str, serverSelectionTimeoutMS=3000)
 
 
-def get_db(client: AsyncIOMotorClient = Depends(get_client), x_token: str = HeaderToken) -> AsyncIOMotorDatabase:
+def get_db(client: AsyncIOMotorClient = Depends(get_client), x_token: str = TokenHeader) -> AsyncIOMotorDatabase:
     return client[x_token]
 
 
