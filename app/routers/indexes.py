@@ -1,6 +1,6 @@
 import pymongo
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Path, status
 from pymongo import errors as pymongo_errors
 
 from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorCollection
@@ -50,7 +50,7 @@ async def list_collection_indexes(collection: AsyncIOMotorCollection = Depends(g
 
 
 @router.patch("/{collection}", status_code=status.HTTP_201_CREATED, dependencies=[Depends(verify_collection_name(path_index=2))])
-async def create(index: indexes.IndexRequest, collection: AsyncIOMotorCollection = Depends(get_collection)):
+async def create_index(index: indexes.IndexRequest, collection: AsyncIOMotorCollection = Depends(get_collection)):
     if isinstance(index.keys, list):
         index.keys = {key: "asc" for key in index.keys}
     
@@ -72,9 +72,24 @@ async def create(index: indexes.IndexRequest, collection: AsyncIOMotorCollection
                 raise exceptions.BadRequest("Invalid index configuration")
     
     try:
-        return await collection.create_index(
-            index.keys.items(),
-            unique=index.unique
-        )
+        return await collection.create_index(index.keys.items(), unique=index.unique)
     except pymongo_errors.OperationFailure:
         raise exceptions.BadRequest()
+
+
+@router.delete("/{collection}/{index}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(verify_collection_name(path_index=2))])
+async def drop_collection_index(collection: AsyncIOMotorCollection = Depends(get_collection), index: str = Path()):
+    return await collection.drop_index(index)
+
+
+@router.delete("/{collection}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(verify_collection_name(path_index=2))])
+async def drop_collection_indexes(collection: AsyncIOMotorCollection = Depends(get_collection)):
+    return await collection.drop_indexes()
+
+
+@router.delete("", status_code=status.HTTP_204_NO_CONTENT)
+async def drop_all_indexes(db: AsyncIOMotorDatabase = Depends(get_db)):
+    collections_info = await db.list_collections()
+
+    for collection_info in collections_info:
+        await db[collection_info.get('name')].drop_indexes()

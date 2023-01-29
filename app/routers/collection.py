@@ -14,9 +14,6 @@ from app.dependencies import get_collection, verify_collection_name
 from app.filters import smart_find, parse_query_params
 
 
-
-
-
 router = APIRouter(
     dependencies=[Depends(verify_collection_name(path_index=1))]
 )
@@ -25,9 +22,9 @@ router = APIRouter(
 @router.get("/{collection}")
 async def get_many(request: Request, collection: AsyncIOMotorCollection = Depends(get_collection)):
     query_params = parse_query_params(request)
-    cursor = collection.find(query_params["filters"], { "_id": 0 })
+    cursor = collection.find(query_params.get("filters"), { "_id": 0 })
 
-    documents = await cursor.skip(query_params["offset"]).to_list(query_params["limit"])
+    documents = await cursor.skip(query_params.get("offset")).to_list(query_params.get("limit"))
     return documents[0] if len(documents) == 1 else documents
 
 
@@ -74,8 +71,13 @@ async def insert_one_or_many(request: Request, collection: AsyncIOMotorCollectio
 
 @router.delete("/{collection}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_many(request: Request, collection: AsyncIOMotorCollection = Depends(get_collection)):
+    query_params = parse_query_params(request)
+
+    if not query_params.get("filters"):
+        return await collection.drop()
+
     result: DeleteResult = await collection.delete_many(request.query_params)
-    
+
     if not result.acknowledged:
         raise exceptions.BadRequest()
 
