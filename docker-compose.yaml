@@ -4,33 +4,23 @@ services:
     image: mongo
     restart: unless-stopped
     environment:
-      MONGO_INITDB_ROOT_USERNAME: ${DB_USER}
-      MONGO_INITDB_ROOT_PASSWORD: ${DB_PASS}
+      MONGO_INITDB_ROOT_USERNAME: ${DB_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${DB_PASS:-p@swd}
     ports:
-      - ${DB_PORT}:27017
-    volumes:
-      - ./data/db:/data/db
-  mongo-ui:
-    image: mongo-express
-    restart: unless-stopped
-    ports:
-      - ${DB_ADMIN_UI_PORT}:8081
-    environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: ${DB_USER}
-      ME_CONFIG_MONGODB_ADMINPASSWORD: ${DB_PASS}
-      ME_CONFIG_MONGODB_URL: mongodb://${DB_USER}:${DB_PASS}@mongo:27017/
+      - "27017:27017"
+    # volumes:
+    #   - ./data/db:/data/db
   api:
     build: .
-    volumes:
-      - ./app:/app
-    environment:
-      DB_USER: ${DB_USER}
-      DB_PASS: ${DB_PASS}
-      DB_HOST: mongo
-      DB_PORT: 27017
-    ports:
-     - ${APP_PORT}:80
     restart: unless-stopped
+    volumes:
+      - ./app:/lorem/app:ro
+    environment:
+      DB_USER: ${DB_USER:-admin}
+      DB_PASS: ${DB_PASS:-p@swd}
+      DB_HOST: ${DB_HOST:-mongo}
+      DB_PORT: ${DB_PORT:-27017}
     depends_on:
-    - mongo
-    entrypoint: /start-reload.sh
+      - mongo
+    ports:
+      - "8000:80"

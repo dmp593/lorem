@@ -6,8 +6,7 @@ from fastapi import Request
 
 from app.exceptions import BadRequest
 
-
-__ID_PATHS__ = ('id', 'uuid', 'uid', 'code', 'pk', 'username', 'email', 'vat',)
+__id_keys_candidates__ = ('id', 'uuid', 'uid', 'code', 'pk', 'username', 'email', 'vat',)
 
 
 def tonum(value: any, default: int | None = None, converter: int | float = int):
@@ -35,8 +34,8 @@ class GroupType(StrEnum):
     Or = "$or"
 
 class GroupFilter(Filter):
-    def __init__(self, key: GroupType, *value: Filter) -> None:
-        super().__init__(key.value, value)
+    def __init__(self, key: GroupType, *value: tuple[Filter]) -> None:
+        super().__init__(key, list(value))
 
     def __lshift__(self, rhs) -> Self:
         self.value.append(rhs)
@@ -46,11 +45,11 @@ class GroupFilter(Filter):
         return {self.key: [value() for value in self.value]}
 
 class And(GroupFilter):
-    def __init__(self, *value: Filter) -> None:
+    def __init__(self, *value: tuple[Filter]) -> None:
         super().__init__(GroupType.And, *value)
 
 class Or(GroupFilter):
-    def __init__(self, *value: Filter) -> None:
+    def __init__(self, *value: tuple[Filter]) -> None:
         super().__init__(GroupType.Or, *value)
 
 
@@ -256,6 +255,14 @@ def parse_query_params(request: Request):
 
 
 def smart_find(id):
-    filters = [Eq(key, id) for key in __ID_PATHS__]
-    or_filter = Or(*filters)
-    return or_filter()
+    smart_find_filter = Or()
+    id_num = tonum(id)
+
+    if id_num != None:
+        for key in __id_keys_candidates__:
+            smart_find_filter << Or(Eq(key, id), Eq(key, id_num))
+    else:
+        for key in __id_keys_candidates__:
+            smart_find_filter << Eq(key, id)
+
+    return smart_find_filter()

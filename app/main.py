@@ -1,3 +1,6 @@
+import os
+import logging
+
 from typing import Any, List
 
 from motor.motor_asyncio import AsyncIOMotorCollection
@@ -7,9 +10,12 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app import exceptions
 
-from app.dependencies import get_db_collection
+from app.dependencies import get_collection
 from app.filters import smart_find, parse_query_params
 
+
+log_level = os.environ.get('LOG_LEVEL', 'info')
+logging.basicConfig(level=log_level.upper())
 
 app = FastAPI()
 
@@ -22,8 +28,9 @@ app.add_middleware(
 )
 
 
-@app.get("/{collection}/")
-async def post(request: Request, collection: AsyncIOMotorCollection = Depends(get_db_collection)):
+@app.get("/{collection}")
+async def post(request: Request, collection: AsyncIOMotorCollection = Depends(get_collection)):
+    print(request.query_params)
     query_params = parse_query_params(request)
 
     cursor = collection.find(query_params['filters'], { '_id': 0 })
@@ -32,8 +39,8 @@ async def post(request: Request, collection: AsyncIOMotorCollection = Depends(ge
     return documents[0] if len(documents) == 1 else documents
 
 
-@app.get("/{collection}/{id}/")
-async def post(id: str, collection: AsyncIOMotorCollection = Depends(get_db_collection)):
+@app.get("/{collection}/{id}")
+async def post(id: str, collection: AsyncIOMotorCollection = Depends(get_collection)):
     document = await collection.find_one(smart_find(id), { '_id': 0 })
 
     if not document:
@@ -64,8 +71,8 @@ async def insert_one(document: Any, db_collection: AsyncIOMotorCollection) -> Li
     return document
 
 
-@app.post("/{collection}/", status_code=status.HTTP_201_CREATED)
-async def post(request: Request, collection: AsyncIOMotorCollection = Depends(get_db_collection)):
+@app.post("/{collection}", status_code=status.HTTP_201_CREATED)
+async def post(request: Request, collection: AsyncIOMotorCollection = Depends(get_collection)):
     json = await request.json()
 
     return await (
@@ -75,16 +82,16 @@ async def post(request: Request, collection: AsyncIOMotorCollection = Depends(ge
     )
 
 
-@app.delete('/{collection}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete(request: Request, collection: AsyncIOMotorCollection = Depends(get_db_collection)):
+@app.delete('/{collection}', status_code=status.HTTP_204_NO_CONTENT)
+async def delete(request: Request, collection: AsyncIOMotorCollection = Depends(get_collection)):
     result: DeleteResult = await collection.delete_many(request.query_params)
     
     if not result.acknowledged:
         raise exceptions.BadRequest()
 
 
-@app.delete("/{collection}/{id}/", status_code=status.HTTP_204_NO_CONTENT)
-async def post(id: str, collection: AsyncIOMotorCollection = Depends(get_db_collection)):
+@app.delete("/{collection}/{id}", status_code=status.HTTP_204_NO_CONTENT)
+async def post(id: str, collection: AsyncIOMotorCollection = Depends(get_collection)):
     document = await collection.delete_one(smart_find(id), { '_id': 0 })
 
     if not document:
