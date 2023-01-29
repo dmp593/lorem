@@ -8,7 +8,7 @@ from app.dependencies import get_client
 
 
 router = APIRouter(
-    prefix='/tokens',
+    prefix='/$tokens',
     tags=['token']
 )
 
