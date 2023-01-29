@@ -21,10 +21,10 @@ TokenHeader = Header(
     min_length=TOKEN_MIN_LENGTH, 
     max_length=TOKEN_MAX_LENGTH, 
     # https://www.mongodb.com/docs/manual/reference/limits/#mongodb-limit-Restrictions-on-Database-Names-for-Unix-and-Linux-Systems
-    regex=r'^\w*$',
+    regex=r"^\w*$",
     title="Authorization Token to access your private database."
 )
 
 
 def generate(length) -> str:
-    return ''.join(random.choice(TOKEN_CHARACTERS) for _ in range(length))
+    return "".join(random.choice(TOKEN_CHARACTERS) for _ in range(length))

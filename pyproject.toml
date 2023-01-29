@@ -12,6 +12,7 @@ fastapi = {extras = ["all"], version = "^0.89.1"}
 uvicorn = {extras = ["standard"], version = "^0.20.0"}
 motor = "^3.1.1"
 anyio = "^3.6.2"
+pydantic = "^1.10.4"
 
 [tool.poetry.group.dev.dependencies]
 httpx = "^0.23.3"

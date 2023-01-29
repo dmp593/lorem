@@ -6,7 +6,7 @@ from fastapi import Request
 
 from app.exceptions import BadRequest
 
-__id_keys_candidates__ = ('id', 'uuid', 'uid', 'code', 'pk', 'username', 'email', 'vat',)
+__id_keys_candidates__ = ("id", "uuid", "uid", "code", "pk", "username", "email", "vat",)
 
 
 def tonum(value: any, default: int | None = None, converter: int | float = int):
@@ -122,9 +122,9 @@ class BooleanFilter(Filter):
         if isinstance(self.value, str):
             value_ = self.value.lower()
             
-            if value_ in ['true', 'yes', 'y', '1', '']:
+            if value_ in ["true", "yes", "y", "1", ""]:
                 return True    
-            elif value_ in ['false', 'no', 'n', '0']:
+            elif value_ in ["false", "no", "n", "0"]:
                 return False
         
         raise ValueError(f"'{self.value}' is not a valid boolean value")
@@ -190,29 +190,29 @@ class EndsWith(RegexFilter):
 
 class FiltersRegistry:
     _filters = {
-        'eq': Eq,
-        'ne': Ne,
-        'neq': Ne,
-        'gt': Gt,
-        'gte': Gte,
-        'lt': Lt,
-        'lte': Lte,
-        'in': In,
-        'nin': NotIn,
-        'notin': NotIn,
-        'exists': Exists,
-        'nexists': NotExists,
-        'notexists': NotExists,
-        'contains': Contains,
-        'icontains': lambda k, v: Contains(k, v, flags=re.IGNORECASE),
-        'startswith': StartsWith,
-        'istartswith': lambda k, v: StartsWith(k, v, flags=re.IGNORECASE),
-        'endswith': EndsWith,
-        'iendswith': lambda k, v: EndsWith(k, v, flags=re.IGNORECASE),
-        'null': IsNull,
-        'isnull': IsNull,
-        'notnull': IsNotNull,
-        'isnotnull': IsNotNull,
+        "eq": Eq,
+        "ne": Ne,
+        "neq": Ne,
+        "gt": Gt,
+        "gte": Gte,
+        "lt": Lt,
+        "lte": Lte,
+        "in": In,
+        "nin": NotIn,
+        "notin": NotIn,
+        "exists": Exists,
+        "nexists": NotExists,
+        "notexists": NotExists,
+        "contains": Contains,
+        "icontains": lambda k, v: Contains(k, v, flags=re.IGNORECASE),
+        "startswith": StartsWith,
+        "istartswith": lambda k, v: StartsWith(k, v, flags=re.IGNORECASE),
+        "endswith": EndsWith,
+        "iendswith": lambda k, v: EndsWith(k, v, flags=re.IGNORECASE),
+        "null": IsNull,
+        "isnull": IsNull,
+        "notnull": IsNotNull,
+        "isnotnull": IsNotNull,
     }
 
     @classmethod
@@ -222,19 +222,19 @@ class FiltersRegistry:
         for query_param in entries.items():
             key, value = query_param
 
-            if key.startswith('__'):
+            if key.startswith("__"):
                 continue
 
-            operator = 'eq'
+            operator = "eq"
 
-            if '__' in key:
-                key, operator = key.split('__', maxsplit=1)
+            if "__" in key:
+                key, operator = key.split("__", maxsplit=1)
 
             try:
                 filter_cls = cls._filters.get(operator)
 
                 if not filter_cls:
-                    allowed_operators = ', '.join(cls._filters.keys())
+                    allowed_operators = ", ".join(cls._filters.keys())
                     raise BadRequest(f"Invalid filter operator: '{operator}'. Allowed: {allowed_operators}")
 
                 filter_ = filter_cls(key, value)
@@ -248,8 +248,8 @@ class FiltersRegistry:
 
 def parse_query_params(request: Request):
     return {
-        "limit": tonum(request.query_params.get('__limit'), 100),
-        "offset": tonum(request.query_params.get('__offset'), 0),
+        "limit": tonum(request.query_params.get("__limit"), 100),
+        "offset": tonum(request.query_params.get("__offset"), 0),
         "filters": FiltersRegistry.parse(request.query_params),
     }
 

@@ -10,10 +10,10 @@ from app.token import TokenHeader
 
 @cache
 def get_mongodb_connection_str() -> str:
-    username: str | None = os.environ.get('DB_USER', None)
-    password: str| None = os.environ.get('DB_PASS', None)
-    host: str = os.environ.get('DB_HOST', 'localhost')
-    port: str = os.environ.get('DB_PORT', '27017')
+    username: str | None = os.environ.get("DB_USER", None)
+    password: str| None = os.environ.get("DB_PASS", None)
+    host: str = os.environ.get("DB_HOST", "localhost")
+    port: str = os.environ.get("DB_PORT", "27017")
 
     if not username or not password:
         return f"mongodb://{host}:{port}/"

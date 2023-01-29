@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 
-from app.routers import collection, tokens
+from app.routers import collection, indexes, tokens
 
 
 log_level = os.environ.get('LOG_LEVEL', 'info')
@@ -24,5 +24,6 @@ app.add_middleware(
 )
 
 
+app.include_router(indexes.router)
 app.include_router(tokens.router)
 app.include_router(collection.router)
