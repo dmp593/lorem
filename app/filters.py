@@ -1,22 +1,13 @@
+import math
 import re
 
 from enum import StrEnum
 from typing import Self
-from fastapi import Request
 
-from app.exceptions import BadRequest
+from app import exceptions, utils
+
 
 __id_keys_candidates__ = ("id", "uuid", "uid", "code", "pk", "username", "email", "vat",)
-
-
-def tonum(value: any, default: int | None = None, converter: int | float = int):
-    if isinstance(value, converter):
-        return value
-    
-    try:
-        return converter(value)
-    except (TypeError, ValueError):
-        return default
 
 
 class Filter:
@@ -27,11 +18,19 @@ class Filter:
     def __call__(self) -> dict[str, any]:
         return {self.key: self.value}
 
+    @property
+    def value__isnumeric(self) -> bool:
+        return utils.is_numeric(self.value)
+
+    @property
+    def value__number(self) -> int | float:
+        return utils.to_number(self.value)
 
 class GroupType(StrEnum):
     Expr = "$expr"
     And = "$and"
     Or = "$or"
+
 
 class GroupFilter(Filter):
     def __init__(self, key: GroupType, *value: tuple[Filter]) -> None:
@@ -42,11 +41,13 @@ class GroupFilter(Filter):
         return self
 
     def __call__(self) -> dict[str, any]:
-        return {self.key: [value() for value in self.value]}
+        return {self.key.value: [value() for value in self.value]}
+
 
 class And(GroupFilter):
     def __init__(self, *value: tuple[Filter]) -> None:
         super().__init__(GroupType.And, *value)
+
 
 class Or(GroupFilter):
     def __init__(self, *value: tuple[Filter]) -> None:
@@ -92,10 +93,13 @@ class ListFilter(Filter):
             return value
 
         if isinstance(value, str) and "," in value:
-            value = [tonum(v, default=v) for v in value.split(",")]
+            return [v for v in value.split(",")]
         
         return [value]
 
+    @property
+    def value__list_with_numerics(self):
+        return [utils.to_number(v, default=v) for v in self.value__list]
 
 class In(ListFilter):
     def __call__(self) -> dict[str, dict[str, any]]:
@@ -128,6 +132,7 @@ class BooleanFilter(Filter):
                 return False
         
         raise ValueError(f"'{self.value}' is not a valid boolean value")
+
 
 class Exists(BooleanFilter):
     def __call__(self) -> dict[str, dict[str, bool]]:
@@ -188,8 +193,8 @@ class EndsWith(RegexFilter):
         return re.compile(f"{self.value}$", self.flags)
 
 
-class FiltersRegistry:
-    _filters = {
+class F: # FilterFacade
+    __registry__ = {
         "eq": Eq,
         "ne": Ne,
         "neq": Ne,
@@ -216,53 +221,58 @@ class FiltersRegistry:
     }
 
     @classmethod
-    def parse(cls, entries: dict[str, any]):
-        builder = {}
+    def filter(cls, entries: dict[str, any]):
+        query = {}
         
-        for query_param in entries.items():
-            key, value = query_param
+        for entry in entries.items():
+            key, value = entry
 
             if key.startswith("__"):
                 continue
 
             operator = "eq"
-
             if "__" in key:
                 key, operator = key.split("__", maxsplit=1)
 
             try:
-                filter_cls = cls._filters.get(operator)
-
+                filter_cls = cls.__registry__.get(operator)
                 if not filter_cls:
-                    allowed_operators = ", ".join(cls._filters.keys())
-                    raise BadRequest(f"Invalid filter operator: '{operator}'. Allowed: {allowed_operators}")
+                    allowed_operators = ", ".join(cls.__registry__.keys())
+                    raise exceptions.BadRequest(f"Invalid filter operator: '{operator}'. Allowed: {allowed_operators}")
 
-                filter_ = filter_cls(key, value)
+                if isinstance(value, list) and operator in ['eq', 'ne', 'in', 'nin']:
+                    filtering = In(key, value) if operator in ['eq', 'in'] else NotIn(key, value)
+                elif operator in ['eq', 'ne'] and "," in value:
+                    if operator == 'eq':
+                        in_filter = In(key, value)
+                        filtering = Or(filter_cls(key, value), in_filter, In(key, in_filter.value__list_with_numerics))
+                    else:
+                        nin_filter = NotIn(key, value)
+                        filtering = Or(filter_cls(key, value), nin_filter, NotIn(key, nin_filter.value__list_with_numerics))
+                else:
+                    filtering = filter_cls(key, value)
+                
+                if utils.is_numeric(value) and not isinstance(filtering, RegexFilter):
+                        filtering = Or(filtering, filter_cls(key, utils.to_number(value)))
+                elif isinstance(filtering, ListFilter):
+                    filtering = Or(filtering, filter_cls(key, filtering.value__list_with_numerics))
 
-                builder |= filter_()
+                query |= filtering()
             except ValueError as e: # TODO create FilterError
-                raise BadRequest(f"({query_param[0]}={query_param[1]}) {e}")
+                raise exceptions.BadRequest(f"({entry[0]}={entry[1]}) {e}")
 
-        return builder
+        return query
 
+    @classmethod
+    def find(cls, id):
+        find = Or()
+        id_num = utils.to_number(id)
 
-def parse_query_params(request: Request):
-    return {
-        "limit": tonum(request.query_params.get("__limit"), 100),
-        "offset": tonum(request.query_params.get("__offset"), 0),
-        "filters": FiltersRegistry.parse(request.query_params),
-    }
+        if id_num != None:
+            for key in __id_keys_candidates__:
+                find << Or(Eq(key, id), Eq(key, id_num))
+        else:
+            for key in __id_keys_candidates__:
+                find << Eq(key, id)
 
-
-def smart_find(id):
-    smart_find_filter = Or()
-    id_num = tonum(id)
-
-    if id_num != None:
-        for key in __id_keys_candidates__:
-            smart_find_filter << Or(Eq(key, id), Eq(key, id_num))
-    else:
-        for key in __id_keys_candidates__:
-            smart_find_filter << Eq(key, id)
-
-    return smart_find_filter()
+        return find()

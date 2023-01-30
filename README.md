@@ -292,15 +292,32 @@ Everything other than these values are considered false.
 Thus, in order to test the inexistence of a field or a field that must be not null, just do something like:
 ```GET localhost:<app-port>/dogs/?owner__isnull=0``` Gets all the dogs that have an owner :smiley:
 
+
+### NOTE 2
+
+All values in query parameters that can be parsed to numeric values, will be treated like so when possible (excluding regexes: \[i\]contains, \[i\]startswith, \[i\]endswith ). The app will guess the query by applying an internally an Or operator \<expression\> OR \<numeric-expression\>.
+
+If the value is an array, the same rule applies Eg: ```colors__in=brown,gold,255``` will parse as ```['brown', 'gold', 255]``` and thus an OR operator will be applied.
+
+### NOTE 3
+
+If you pass a value separated by commas using equal/not equal operator, it will try an IN operator and also an Or operator following the NOTE 2. Eg: ```colors=brown,255``` will query: ( colors EQ 'brown,gold' OR colors IN ['brown', '255'] OR colors IN ['brown', 255] ).
+
 #### TODO/Current Limitations
 
-1. All values in query parameters that can be parsed to numerical values, will be treated like so. There is no escape mechanism for now.
-2. You  **can't** create sub-resources, for example: ```localhost:<app-port>/canidae/caninae/canini/canina``` it's not allowed.
+1. You  **can't** create sub-resources, for example: ```localhost:<app-port>/canidae/caninae/canini/canina``` it's not allowed.
 Only the root resource is allowed (```canidae```). The second resource will be treated as id. The rest of the paths don't make any sense for the MockAPI. It will not work.
-3. If you pass a value separated by commas, it will be treated as an array. Eg: ```colors=brown,gold``` will parse as ```['brown', 'gold']```.
-For each element in the array, the rule limitation 1 still applies. Eg: ```colors=brown,gold,255``` will parse as ```['brown', 'gold', 255]```.
-4. Do not send fields starting with a dot, double underscore or a dollar sign.
-The only fields allowed to start with double underscore are ```__limit``` and ```__offet```.
-5. For now, regarding pagination, when returning a collection, there is no metadata that tells you the count until now and total count of entities in the database.
+2. Do not send fields starting with a dot, double underscore. The only fields allowed to start with double underscore are ```__limit``` and ```__offet``` for pagination.
+3. TODO for future, you can indicate the app to ignore NOTE 2 and 3 rules by suffixing __raw.
 
-Keep in mind that these query limitations can impact your results.
+Eg:
+
+- ```model__raw=2394701``` will be treated \"as-is\", a query paramter string
+- ```colors__raw=brown,gold``` will not apply NOTE 3
+- ```colors__in__raw=brown,255``` will not apply NOTE 3
+
+__raw will be an indicator to any operator to not "smart guess" the value using complex queries.
+
+#### REMEMBER
+
+Keep in mind that these notes and limitations can impact your queries performances and results.
