@@ -232,7 +232,7 @@ class F: # FilterFacade
 
             operator = "eq"
             if "__" in key:
-                key, operator = key.split("__", maxsplit=1)
+                key, operator = key.rsplit("__", maxsplit=1)
 
             try:
                 filter_cls = cls.__registry__.get(operator)
