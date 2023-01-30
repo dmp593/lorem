@@ -296,7 +296,7 @@ Thus, in order to test the inexistence of a field or a field that must be not nu
 ### NOTE 2
 
 All values in query parameters that can be parsed to numeric values, will be treated like so when possible (excluding regexes: ```\[i\]contains```, ```\[i\]startswith```, ```\[i\]endswith``` ). The app will guess the query by applying an internally an Or operator: \<expression\> OR \<numeric-expression\>.
-Eq: ```foo=123``` will apply ( foo EQ '123' OR foo EQ 123 ).
+Eq: ```foo=123``` will apply ( foo EQ '123' OR foo EQ 123 ) but ```foo=bar``` will do only ( foo EQ 'bar' ).
 
 
 If the value is an array, the same rule applies Eg: ```colors__in=brown,gold,255``` will parse as ```['brown', 'gold', 255]``` and thus an OR operator will be applied.
