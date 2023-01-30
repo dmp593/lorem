@@ -310,13 +310,14 @@ If you pass a value separated by commas using equal/not equal operator, it will 
 1. You  **can't** create sub-resources, for example: ```localhost:<app-port>/canidae/caninae/canini/canina``` it's not allowed.
 Only the root resource is allowed (```canidae```). The second resource will be treated as id. The rest of the paths don't make any sense for the MockAPI. It will not work.
 2. Do not send fields starting with a dot, double underscore. The only fields allowed to start with double underscore are ```__limit``` and ```__offet``` for pagination.
-3. TODO for future, you can indicate the app to ignore NOTE 2 and 3 rules by suffixing __raw.
+3. TODO probably in the future, I will implement the __raw suffix (still thinking possibilities for this).
+You can indicate the app to ignore NOTE 2 and 3 rules with this suffix.
 
 Eg:
 
-- ```model__raw=2394701``` will be treated \"as-is\", a query paramter string
-- ```colors__raw=brown,gold``` will not apply NOTE 3
-- ```colors__in__raw=brown,255``` will not apply NOTE 3
+- ```model__raw=2394701``` will be treated \"as-is\": ( model EQ '2394701' )
+- ```colors__raw=brown,gold``` will not apply NOTE 3: ( colors EQ 'brown,gold' )
+- ```colors__in__raw=brown,255``` will not apply NOTE 3: ( COLORS IN ['brown', '255'] )
 
 __raw will be an indicator to any operator to not "smart guess" the value using complex queries.
 
