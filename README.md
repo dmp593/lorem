@@ -295,13 +295,15 @@ Thus, in order to test the inexistence of a field or a field that must be not nu
 
 ### NOTE 2
 
-All values in query parameters that can be parsed to numeric values, will be treated like so when possible (excluding regexes: \[i\]contains, \[i\]startswith, \[i\]endswith ). The app will guess the query by applying an internally an Or operator \<expression\> OR \<numeric-expression\>.
+All values in query parameters that can be parsed to numeric values, will be treated like so when possible (excluding regexes: ```\[i\]contains```, ```\[i\]startswith```, ```\[i\]endswith``` ). The app will guess the query by applying an internally an Or operator: \<expression\> OR \<numeric-expression\>.
+Eq: ```foo=123``` will apply ( foo EQ '123' OR foo EQ 123 ).
+
 
 If the value is an array, the same rule applies Eg: ```colors__in=brown,gold,255``` will parse as ```['brown', 'gold', 255]``` and thus an OR operator will be applied.
 
 ### NOTE 3
 
-If you pass a value separated by commas using equal/not equal operator, it will try an IN operator and also an Or operator following the NOTE 2. Eg: ```colors=brown,255``` will query: ( colors EQ 'brown,gold' OR colors IN ['brown', '255'] OR colors IN ['brown', 255] ).
+If you pass a value separated by commas using equal/not equal operator, it will try an IN operator and also an Or operator following the NOTE 2. Eg: ```colors=brown,255``` will query: ( colors EQ 'brown,255' OR colors IN ['brown', '255'] OR colors IN ['brown', 255] ).
 
 #### TODO/Current Limitations
 
