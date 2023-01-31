@@ -33,8 +33,8 @@ def get_db(client: AsyncIOMotorClient = Depends(get_client), x_token: str = Toke
     return client[x_token]
 
 
-def get_collection(collection: str, db: AsyncIOMotorDatabase = Depends(get_db)) -> AsyncIOMotorCollection:
-    return db[collection]
+def get_collection(collection: str, version: int = None, db: AsyncIOMotorDatabase = Depends(get_db)) -> AsyncIOMotorCollection:
+    return db[f"@v{version}-{collection}"] if version != None and version >= 0 else db[collection]
 
 
 def verify_collection_name(path_index: int) -> typing.Callable[[Request,], None]:
@@ -42,9 +42,13 @@ def verify_collection_name(path_index: int) -> typing.Callable[[Request,], None]
         system_routers = [r.router for _, r in inspect.getmembers(routers, inspect.ismodule)]
 
         collection = request.url.path.split('/')[path_index]
-        system_prefixes = [r.prefix[1:] for r in system_routers if r.prefix]
+        system_prefixes = [r.prefix[1:] for r in system_routers if r.prefix.startswith('/@')]
 
         if collection in system_prefixes:
             raise exceptions.Forbidden(f"Invalid resource name: {collection}. Please favor strict alphanumeric characters.")  
     
     return wrapper
+
+
+def get_filters(request: Request) -> dict:
+    return {key: val for key, val in request.query_params.items() if not key.startswith("__")}

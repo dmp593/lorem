@@ -221,7 +221,7 @@ class F: # FilterFacade
     }
 
     @classmethod
-    def filter(cls, entries: dict[str, any]):
+    def query(cls, entries: dict[str, any]):
         query = {}
         
         for entry in entries.items():
