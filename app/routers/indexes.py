@@ -38,8 +38,8 @@ async def list_all_indexes(db: AsyncIOMotorDatabase = Depends(get_db)):
     indexes = {}
 
     for collection_info in collections_info:
-        collection = db[collection_info.get('name')]
-        indexes[collection.name] = await get_indexes(collection)
+        collection_name = collection_info.get('name')
+        indexes[collection_name] = await get_indexes(db[collection_name])
 
     return indexes
 
@@ -72,4 +72,5 @@ async def drop_all_indexes(db: AsyncIOMotorDatabase = Depends(get_db)):
     collections_info = await db.list_collections()
 
     for collection_info in collections_info:
-        await db[collection_info.get('name')].drop_indexes()
+        collection_name = collection_info.get('name')
+        await db[collection_name].drop_indexes()

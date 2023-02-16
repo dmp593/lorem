@@ -7,8 +7,7 @@ from functools import cache
 from fastapi import Depends, Path, Request
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection, AsyncIOMotorDatabase
 
-from app import exceptions, routers
-from app.token import TokenHeader
+from app import exceptions, routers, token
 
 
 @cache
@@ -29,8 +28,9 @@ def get_client(conn_str: str = Depends(get_mongodb_connection_str)) -> AsyncIOMo
     return AsyncIOMotorClient(conn_str, serverSelectionTimeoutMS=3000)
 
 
-def get_db(client: AsyncIOMotorClient = Depends(get_client), x_token: str = TokenHeader) -> AsyncIOMotorDatabase:
-    return client[x_token]
+def get_db(request: Request, client: AsyncIOMotorClient = Depends(get_client)) -> AsyncIOMotorDatabase:
+    db_name = token.extract(request.headers)
+    return client[db_name]
 
 
 def get_collection(resource: str, db: AsyncIOMotorDatabase = Depends(get_db)) -> AsyncIOMotorCollection:
