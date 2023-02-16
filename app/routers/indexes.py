@@ -44,45 +44,25 @@ async def list_all_indexes(db: AsyncIOMotorDatabase = Depends(get_db)):
     return indexes
 
 
-@router.get("/{collection}", status_code=status.HTTP_200_OK, dependencies=[Depends(verify_collection_name(path_index=2))])
+@router.get("/{resource}", status_code=status.HTTP_200_OK, dependencies=[Depends(verify_collection_name(path_index=2))])
 async def list_collection_indexes(collection: AsyncIOMotorCollection = Depends(get_collection)):
     return await get_indexes(collection)
 
 
-@router.patch("/{collection}", status_code=status.HTTP_201_CREATED, dependencies=[Depends(verify_collection_name(path_index=2))])
+@router.patch("/{resource}", status_code=status.HTTP_201_CREATED, dependencies=[Depends(verify_collection_name(path_index=2))])
 async def create_index(index: indexes.IndexRequest, collection: AsyncIOMotorCollection = Depends(get_collection)):
-    if isinstance(index.keys, list):
-        index.keys = {key: "asc" for key in index.keys}
-    
-    for k, v in index.keys.items():
-        match v.lower():
-            case "asc" | "ascending" | "1" | 1:
-                index.keys[k] = pymongo.ASCENDING
-            case "desc" | "descending" | "-1" | -1:
-                index.keys[k] = pymongo.DESCENDING
-            case "geo2d" | "2d":
-                index.keys[k] = pymongo.GEO2D
-            case "geo" | "geosphere" | "2dsphere":
-                index.keys[k] = pymongo.GEOSPHERE
-            case "hash" | "hashed":
-                index.keys[k] = pymongo.HASHED
-            case "txt" | "text":
-                index.keys[k] = pymongo.TEXT
-            case _:
-                raise exceptions.BadRequest("Invalid index configuration")
-    
     try:
         return await collection.create_index(index.keys.items(), unique=index.unique)
     except pymongo_errors.OperationFailure:
         raise exceptions.BadRequest()
 
 
-@router.delete("/{collection}/{index}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(verify_collection_name(path_index=2))])
+@router.delete("/{resource}/{index}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(verify_collection_name(path_index=2))])
 async def drop_collection_index(collection: AsyncIOMotorCollection = Depends(get_collection), index: str = Path()):
     return await collection.drop_index(index)
 
 
-@router.delete("/{collection}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(verify_collection_name(path_index=2))])
+@router.delete("/{resource}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(verify_collection_name(path_index=2))])
 async def drop_collection_indexes(collection: AsyncIOMotorCollection = Depends(get_collection)):
     return await collection.drop_indexes()
 

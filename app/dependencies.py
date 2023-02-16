@@ -4,7 +4,7 @@ import typing
 
 from functools import cache
 
-from fastapi import Depends, Request
+from fastapi import Depends, Path, Request
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection, AsyncIOMotorDatabase
 
 from app import exceptions, routers
@@ -33,8 +33,12 @@ def get_db(client: AsyncIOMotorClient = Depends(get_client), x_token: str = Toke
     return client[x_token]
 
 
-def get_collection(collection: str, version: int = None, db: AsyncIOMotorDatabase = Depends(get_db)) -> AsyncIOMotorCollection:
-    return db[f"@v{version}-{collection}"] if version != None and version >= 0 else db[collection]
+def get_collection(resource: str, db: AsyncIOMotorDatabase = Depends(get_db)) -> AsyncIOMotorCollection:
+    return db[resource]
+
+
+def get_collection_version(resource: str, version: int = Path(ge=0), db: AsyncIOMotorDatabase = Depends(get_db)) -> AsyncIOMotorCollection:
+    return get_collection(f"@v{version}-{resource}", db)
 
 
 def verify_collection_name(path_index: int) -> typing.Callable[[Request,], None]:

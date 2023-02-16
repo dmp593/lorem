@@ -1,8 +1,9 @@
+from typing import Self
 from fastapi import Depends
 from motor.motor_asyncio import AsyncIOMotorCollection
 from pymongo.results import InsertOneResult, InsertManyResult, DeleteResult
 
-from app.dependencies import get_collection
+from app.dependencies import get_collection, get_collection_version
 from app.filters import F
 
 
@@ -10,6 +11,10 @@ class CollectionRepository:
     def __init__(self, collection: AsyncIOMotorCollection = Depends(get_collection)) -> None:
         self.collection = collection
         self.projection = { "_id": 0 } # default projection
+
+    @classmethod
+    def versioned(cls, collection: AsyncIOMotorCollection = Depends(get_collection_version)) -> Self:
+        return cls(collection)
 
     async def count(self, filters: dict) -> int:
         query = F.query(filters)
