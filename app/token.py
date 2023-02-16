@@ -14,6 +14,8 @@ TOKEN_MAX_LENGTH: int = 63 # https://www.mongodb.com/docs/manual/reference/limit
 
 
 def extract(headers: Headers):
+    token = None
+    
     if "authorization" in headers:
         authorization = headers["authorization"]
         
