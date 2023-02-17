@@ -51,7 +51,7 @@ def get_filter_key_and_operator(key: str, registry: dict[str, filters.Filter], r
 
 
 def get_filters(query_params: dict[str, str] = Depends(get_query_params_filters), registry: dict[str, filters.Filter] = Depends(get_filters_registry)) -> dict:
-    filters_ = {}
+    applied_filters = {}
     
     for entry in query_params.items():
         key, value = entry
@@ -62,11 +62,11 @@ def get_filters(query_params: dict[str, str] = Depends(get_query_params_filters)
         filter_cls = registry.get(operator)
 
         try:
-            filters_ |= filter_cls(key, value)()
+            applied_filters |= filter_cls(key, value)()
         except ValueError as err:
             raise FilterError(key=entry[0], value=entry[1], err=err)
 
-    return filters_
+    return applied_filters
 
 
 def get_filter_id(id: str | int | float = Query(), ids_keys_candidates: tuple[str] = Depends(get_ids_keys_candidates)) -> dict:
