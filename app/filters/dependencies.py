@@ -71,13 +71,8 @@ def get_filters(query_params: dict[str, str] = Depends(get_query_params_filters)
 
 def get_filter_id(id: str | int | float = Query(), ids_keys_candidates: tuple[str] = Depends(get_ids_keys_candidates)) -> dict:
     filter_id = filters.Or()
-    id_num = utils.to_number(id)
 
-    if id_num != None:
-        for key in ids_keys_candidates:
-            filter_id << filters.Or(filters.Eq(key, id), filters.Eq(key, id_num))
-    else:
-        for key in ids_keys_candidates:
-            filter_id << filters.Eq(key, id)
+    for key in ids_keys_candidates:
+        filter_id << filters.Eq(key, id)
 
     return filter_id()
