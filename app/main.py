@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 
-from app.routers import faker, indexes, resources, tokens, versions
+from app import faker, tokens, indexes, versions, resources
 
 
 log_level = os.environ.get('LOG_LEVEL', 'info')

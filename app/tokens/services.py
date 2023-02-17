@@ -1,8 +1,8 @@
 from typing import Any
 from faker import Faker
-from app import exceptions
+from app.core import exceptions
 
-from app.schemas.faker import FakerSchema
+from app.faker.schemas import FakerSchema
 
 
 class FakerService:

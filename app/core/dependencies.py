@@ -1,5 +1,4 @@
 import os
-import inspect
 import typing
 
 from functools import cache
@@ -7,7 +6,7 @@ from functools import cache
 from fastapi import Depends, Path, Request
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection, AsyncIOMotorDatabase
 
-from app import exceptions, routers, token
+from app.core import exceptions, tokens
 
 
 @cache
@@ -29,7 +28,7 @@ def get_client(conn_str: str = Depends(get_mongodb_connection_str)) -> AsyncIOMo
 
 
 def get_db(request: Request, client: AsyncIOMotorClient = Depends(get_client)) -> AsyncIOMotorDatabase:
-    db_name = token.extract(request.headers)
+    db_name = tokens.extract(request.headers)
     return client[db_name]
 
 
@@ -41,15 +40,12 @@ def get_collection_version(resource: str, version: int = Path(ge=0), db: AsyncIO
     return get_collection(f"@v{version}-{resource}", db)
 
 
-def verify_collection_name(path_index: int) -> typing.Callable[[Request,], None]:
+def verify_resource_name(path_index: int) -> typing.Callable[[Request,], None]:
     def wrapper(request: Request):
-        system_routers = [r.router for _, r in inspect.getmembers(routers, inspect.ismodule)]
+        resource = request.url.path.split('/')[path_index]
 
-        collection = request.url.path.split('/')[path_index]
-        system_prefixes = [r.prefix[1:] for r in system_routers if r.prefix.startswith('/@')]
-
-        if collection in system_prefixes:
-            raise exceptions.Forbidden(f"Invalid resource name: {collection}. Please favor strict alphanumeric characters.")  
+        if resource.startswith('@'):
+            raise exceptions.Forbidden(f"Invalid resource name: {resource}. Please favor strict alphanumeric characters.")  
     
     return wrapper
 

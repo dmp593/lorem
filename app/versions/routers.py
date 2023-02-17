@@ -2,21 +2,21 @@ from fastapi import APIRouter
 
 from fastapi import Depends, Request, status
 
-from app import exceptions
-from app.dependencies import get_collection_version, get_filters, verify_collection_name
-from app.repositories.collection import CollectionRepository
-from app.schemas.paginated import PageRequest, PaginatedResponse
+from app.core import exceptions
+from app.core.dependencies import get_filters, verify_resource_name
+from app.resources.repositories import ResourceRepository
+from app.core.schemas import PageRequest, PaginatedResponse
 
 
 router = APIRouter(
     prefix="/@v",
     tags=["versions"],
-    dependencies=[Depends(verify_collection_name(path_index=2))]
+    dependencies=[Depends(verify_resource_name(path_index=2))]
 )
 
 
 @router.get("{version:int}/{resource}")
-async def get_many(filters = Depends(get_filters), page = Depends(PageRequest), repository: CollectionRepository = Depends(CollectionRepository.versioned)):
+async def get_many(filters = Depends(get_filters), page = Depends(PageRequest), repository: ResourceRepository = Depends(ResourceRepository.versioned)):
     documents = await repository.list(filters, page.offset, page.limit)
     total_count = await repository.count(filters)
 
@@ -24,7 +24,7 @@ async def get_many(filters = Depends(get_filters), page = Depends(PageRequest), 
 
 
 @router.get("{version:int}/{resource}/{id}")
-async def get_one(id: str, repository: CollectionRepository = Depends(CollectionRepository.versioned)):
+async def get_one(id: str, repository: ResourceRepository = Depends(ResourceRepository.versioned)):
     document = await repository.get(id)
 
     if not document:
@@ -34,19 +34,19 @@ async def get_one(id: str, repository: CollectionRepository = Depends(Collection
 
 
 @router.post("{version:int}/{resource}", status_code=status.HTTP_201_CREATED)
-async def insert_one_or_many(request: Request, repository: CollectionRepository = Depends(CollectionRepository.versioned)):
+async def insert_one_or_many(request: Request, repository: ResourceRepository = Depends(ResourceRepository.versioned)):
     json = await request.json()
     return await repository.insert_one_or_many(json)
 
 
 @router.delete("{version:int}/{resource}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_many(filters = Depends(get_filters), repository: CollectionRepository = Depends(CollectionRepository.versioned)) -> None:
+async def delete_many(filters = Depends(get_filters), repository: ResourceRepository = Depends(ResourceRepository.versioned)) -> None:
     if not await repository.delete_many(filters):
         raise exceptions.BadRequest()
 
 
 @router.delete("{version:int}/{resource}/{id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_one(id: str, repository: CollectionRepository = Depends(CollectionRepository.versioned)) -> None:
+async def delete_one(id: str, repository: ResourceRepository = Depends(ResourceRepository.versioned)) -> None:
     document = await repository.delete_one(id)
 
     if not document:

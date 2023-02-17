@@ -1,13 +1,9 @@
-import math
 import re
 
 from enum import StrEnum
 from typing import Self
 
-from app import exceptions, utils
-
-
-__id_keys_candidates__ = ("id", "uuid", "uid", "code", "pk", "username", "email", "vat",)
+from app.core import utils
 
 
 class Filter:
@@ -25,6 +21,7 @@ class Filter:
     @property
     def value__number(self) -> int | float:
         return utils.to_number(self.value)
+
 
 class GroupType(StrEnum):
     Expr = "$expr"
@@ -45,6 +42,8 @@ class GroupFilter(Filter):
 
 
 class And(GroupFilter):
+    names = ['and']
+
     def __init__(self, *value: tuple[Filter]) -> None:
         super().__init__(GroupType.And, *value)
 
@@ -55,31 +54,43 @@ class Or(GroupFilter):
 
 
 class Eq(Filter):
+    names = ['eq']
+
     def __call__(self) -> dict[str, dict[str, any]]:
         return {self.key: {"$eq": self.value}}
 
 
 class Ne(Filter):
+    names = ['ne']
+
     def __call__(self) -> dict[str, dict[str, any]]:
         return {self.key: {"$ne": self.value}}
 
 
 class Gt(Filter):
+    names = ['gt']
+
     def __call__(self) -> dict[str, dict[str, any]]:
         return {self.key: {"$gt", self.value}}
 
 
 class Gte(Filter):
+    names = ['ge']
+
     def __call__(self) -> dict[str, dict[str, any]]:
         return {self.key: {"$gte", self.value}}
 
 
 class Lt(Filter):
+    names = ['lt']
+
     def __call__(self) -> dict[str, dict[str, any]]:
         return {self.key: {"$lt", self.value}}
 
 
 class Lte(Filter):
+    names = ['lte']
+
     def __call__(self) -> dict[str, dict[str, any]]:
         return {self.key: {"$lte", self.value}}
 
@@ -101,12 +112,17 @@ class ListFilter(Filter):
     def value__list_with_numerics(self):
         return [utils.to_number(v, default=v) for v in self.value__list]
 
+
 class In(ListFilter):
+    names = ['in']
+
     def __call__(self) -> dict[str, dict[str, any]]:
         return {self.key: {"$in": self.value__list}}
 
 
 class NotIn(ListFilter):
+    names = ['nin', 'notin']
+    
     def __call__(self) -> dict[str, dict[str, any]]:
         return {self.key: {"$nin": self.value__list}}
 
@@ -135,16 +151,22 @@ class BooleanFilter(Filter):
 
 
 class Exists(BooleanFilter):
+    names = ['exists']
+    
     def __call__(self) -> dict[str, dict[str, bool]]:
         return {self.key: {"$exists": self.value__bool}}
 
 
 class NotExists(Exists):
+    names = ['nexists', 'notexists']
+
     def __call__(self) -> dict[str, dict[str, bool]]:
         return {self.key: {"$exists": not self.value__bool}}
 
 
 class IsNull(BooleanFilter):
+    names = ['null', 'isnull']
+
     def __call__(self) -> And:
         is_null = And(
             Exists(self.key, True),
@@ -155,6 +177,8 @@ class IsNull(BooleanFilter):
 
 
 class IsNotNull(BooleanFilter):
+    names = ['nnull', 'notnull', 'isnotnull']
+
     def __call__(self) -> And:
         is_not_null = And(
             Exists(self.key, True),
@@ -165,6 +189,8 @@ class IsNotNull(BooleanFilter):
 
 
 class RegexFilter(Filter):
+    names = ['re', 'regex']
+
     def __init__(self, key: str, value: str, flags: re.RegexFlag = re.RegexFlag.ASCII) -> None:
         super().__init__(key, value)
         self.flags = flags
@@ -178,101 +204,41 @@ class RegexFilter(Filter):
 
 
 class Contains(RegexFilter):
-    ...
+    names = ['contains']
+
+
+class IContains(RegexFilter):
+    names = ['icontains']
+
+    def __init__(self, key: str, value: str, flags: re.RegexFlag = re.RegexFlag.ASCII) -> None:
+        super().__init__(key, value, flags | re.RegexFlag.IGNORECASE)
 
 
 class StartsWith(RegexFilter):
+    names = ['starts', 'startswith']
+
     @property
     def value__pattern(self) -> re.Pattern:
         return re.compile(f"^{self.value}", self.flags)
 
 
+class IStartsWith(StartsWith):
+    names = ['istarts', 'istartswith']
+
+    def __init__(self, key: str, value: str, flags: re.RegexFlag = re.RegexFlag.ASCII) -> None:
+        super().__init__(key, value, flags | re.RegexFlag.IGNORECASE)
+
+
 class EndsWith(RegexFilter):
+    names = ['ends', 'endswith']
+
     @property
     def value__pattern(self) -> re.Pattern:
         return re.compile(f"{self.value}$", self.flags)
 
 
-class F: # FilterFacade
-    __registry__ = {
-        "eq": Eq,
-        "ne": Ne,
-        "neq": Ne,
-        "gt": Gt,
-        "gte": Gte,
-        "lt": Lt,
-        "lte": Lte,
-        "in": In,
-        "nin": NotIn,
-        "notin": NotIn,
-        "exists": Exists,
-        "nexists": NotExists,
-        "notexists": NotExists,
-        "contains": Contains,
-        "icontains": lambda k, v: Contains(k, v, flags=re.IGNORECASE),
-        "startswith": StartsWith,
-        "istartswith": lambda k, v: StartsWith(k, v, flags=re.IGNORECASE),
-        "endswith": EndsWith,
-        "iendswith": lambda k, v: EndsWith(k, v, flags=re.IGNORECASE),
-        "null": IsNull,
-        "isnull": IsNull,
-        "notnull": IsNotNull,
-        "isnotnull": IsNotNull,
-    }
+class IEndsWith(EndsWith):
+    names = ['iends', 'iendswith']
 
-    @classmethod
-    def query(cls, entries: dict[str, any]):
-        query = {}
-        
-        for entry in entries.items():
-            key, value = entry
-
-            if key.startswith("__"):
-                continue
-
-            operator = "eq"
-            if "__" in key:
-                key, operator = key.rsplit("__", maxsplit=1)
-
-            try:
-                filter_cls = cls.__registry__.get(operator)
-                if not filter_cls:
-                    allowed_operators = ", ".join(cls.__registry__.keys())
-                    raise exceptions.BadRequest(f"Invalid filter operator: '{operator}'. Allowed: {allowed_operators}")
-
-                if isinstance(value, list) and operator in ['eq', 'ne', 'in', 'nin']:
-                    filtering = In(key, value) if operator in ['eq', 'in'] else NotIn(key, value)
-                elif operator in ['eq', 'ne'] and "," in value:
-                    if operator == 'eq':
-                        in_filter = In(key, value)
-                        filtering = Or(filter_cls(key, value), in_filter, In(key, in_filter.value__list_with_numerics))
-                    else:
-                        nin_filter = NotIn(key, value)
-                        filtering = Or(filter_cls(key, value), nin_filter, NotIn(key, nin_filter.value__list_with_numerics))
-                else:
-                    filtering = filter_cls(key, value)
-                
-                if utils.is_numeric(value) and not isinstance(filtering, RegexFilter):
-                        filtering = Or(filtering, filter_cls(key, utils.to_number(value)))
-                elif isinstance(filtering, ListFilter):
-                    filtering = Or(filtering, filter_cls(key, filtering.value__list_with_numerics))
-
-                query |= filtering()
-            except ValueError as e: # TODO create FilterError
-                raise exceptions.BadRequest(f"({entry[0]}={entry[1]}) {e}")
-
-        return query
-
-    @classmethod
-    def find(cls, id):
-        find = Or()
-        id_num = utils.to_number(id)
-
-        if id_num != None:
-            for key in __id_keys_candidates__:
-                find << Or(Eq(key, id), Eq(key, id_num))
-        else:
-            for key in __id_keys_candidates__:
-                find << Eq(key, id)
-
-        return find()
+    def __init__(self, key: str, value: str, flags: re.RegexFlag = re.RegexFlag.ASCII) -> None:
+        super().__init__(key, value, flags | re.RegexFlag.IGNORECASE)

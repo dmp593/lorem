@@ -3,11 +3,11 @@ from fastapi import Depends
 from motor.motor_asyncio import AsyncIOMotorCollection
 from pymongo.results import InsertOneResult, InsertManyResult, DeleteResult
 
-from app.dependencies import get_collection, get_collection_version
-from app.filters import F
+from app.core.dependencies import get_collection, get_collection_version
+from app.filters.facades import F
 
 
-class CollectionRepository:
+class ResourceRepository:
     def __init__(self, collection: AsyncIOMotorCollection = Depends(get_collection)) -> None:
         self.collection = collection
         self.projection = { "_id": 0 } # default projection

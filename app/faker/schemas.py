@@ -2,7 +2,7 @@ import typing
 
 from pydantic import Field
 
-from app.schemas.camel import CamelModel
+from app.core.schemas import CamelModel
 
 
 class FakerSchema(CamelModel):

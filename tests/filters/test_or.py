@@ -1,4 +1,4 @@
-from app.filters import Eq, Or
+from app.filters.facades import Eq, Or
 
 def test_filter_or():
     filters = [

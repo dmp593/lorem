@@ -4,7 +4,7 @@ import string
 
 from fastapi.datastructures import Headers
 
-from app import exceptions
+from app.core import exceptions
 
 
 TOKEN_CHARACTERS: str = string.ascii_letters + string.digits

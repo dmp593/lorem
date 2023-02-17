@@ -1,13 +1,11 @@
-import pymongo
-
 from fastapi import APIRouter, Depends, Path, status
 from pymongo import errors as pymongo_errors
 
 from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorCollection
 
-from app import exceptions
-from app.dependencies import get_collection, get_db, verify_collection_name
-from app.schemas import indexes
+from app.core import exceptions
+from app.core.dependencies import get_collection, get_db, verify_resource_name
+from app.indexes import schemas
 
 
 router = APIRouter(prefix="/@indexes", tags=["indexes"])
@@ -44,25 +42,25 @@ async def list_all_indexes(db: AsyncIOMotorDatabase = Depends(get_db)):
     return indexes
 
 
-@router.get("/{resource}", status_code=status.HTTP_200_OK, dependencies=[Depends(verify_collection_name(path_index=2))])
+@router.get("/{resource}", status_code=status.HTTP_200_OK, dependencies=[Depends(verify_resource_name(path_index=2))])
 async def list_collection_indexes(collection: AsyncIOMotorCollection = Depends(get_collection)):
     return await get_indexes(collection)
 
 
-@router.patch("/{resource}", status_code=status.HTTP_201_CREATED, dependencies=[Depends(verify_collection_name(path_index=2))])
-async def create_index(index: indexes.IndexRequest, collection: AsyncIOMotorCollection = Depends(get_collection)):
+@router.patch("/{resource}", status_code=status.HTTP_201_CREATED, dependencies=[Depends(verify_resource_name(path_index=2))])
+async def create_index(index: schemas.IndexRequest, collection: AsyncIOMotorCollection = Depends(get_collection)):
     try:
         return await collection.create_index(index.keys.items(), unique=index.unique)
     except pymongo_errors.OperationFailure:
         raise exceptions.BadRequest()
 
 
-@router.delete("/{resource}/{index}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(verify_collection_name(path_index=2))])
+@router.delete("/{resource}/{index}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(verify_resource_name(path_index=2))])
 async def drop_collection_index(collection: AsyncIOMotorCollection = Depends(get_collection), index: str = Path()):
     return await collection.drop_index(index)
 
 
-@router.delete("/{resource}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(verify_collection_name(path_index=2))])
+@router.delete("/{resource}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(verify_resource_name(path_index=2))])
 async def drop_collection_indexes(collection: AsyncIOMotorCollection = Depends(get_collection)):
     return await collection.drop_indexes()
 
