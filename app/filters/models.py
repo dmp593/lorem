@@ -1,167 +1,175 @@
 import re
 
-from enum import StrEnum
 from typing import Self
 
-from app.core import utils
+from app.filters import converters
 
 
 class Filter:
+    operator = None
+
     def __init__(self, key: str, value: any) -> None:
         self.key = key
         self.value = value
 
     def __call__(self) -> dict[str, any]:
-        return {self.key: self.value}
-
-    @property
-    def value__isnumeric(self) -> bool:
-        return utils.is_numeric(self.value)
-
-    @property
-    def value__number(self) -> int | float:
-        return utils.to_number(self.value)
-
-
-class GroupType(StrEnum):
-    Expr = "$expr"
-    And = "$and"
-    Or = "$or"
+        if not self.operator:
+            return {self.key: self.value}
+        
+        return {
+            self.key: {
+                self.operator: self.value
+            }
+        }
 
 
 class GroupFilter(Filter):
-    def __init__(self, key: GroupType, *value: tuple[Filter]) -> None:
-        super().__init__(key, list(value))
-
+    def __init__(self, *value: tuple[Filter | dict]) -> None:
+        self.value = list(value)
+    
     def __lshift__(self, rhs) -> Self:
         self.value.append(rhs)
         return self
 
     def __call__(self) -> dict[str, any]:
-        return {self.key.value: [value() for value in self.value]}
+        return {
+            self.operator: [
+                value() if callable(value) else value 
+                for value in self.value
+            ]
+        }
 
 
 class And(GroupFilter):
-    names = ['and']
-
-    def __init__(self, *value: tuple[Filter]) -> None:
-        super().__init__(GroupType.And, *value)
+    operator = '$and'
 
 
 class Or(GroupFilter):
-    def __init__(self, *value: tuple[Filter]) -> None:
-        super().__init__(GroupType.Or, *value)
+    operator = '$or'
 
 
-class Eq(Filter):
-    names = ['eq']
-
+class EqualityFilter(Filter):
     def __call__(self) -> dict[str, dict[str, any]]:
-        return {self.key: {"$eq": self.value}}
+        eq = {
+            self.key: {
+                self.operator: self.value
+            }
+        }
+        
+        if converters.value_is_numeric(self.value):
+            eq_number = {
+                self.key: {
+                    self.operator: converters.value_as_number(self.value)
+                }
+            }
+
+            return Or(eq, eq_number)()
+
+        if converters.value_is_listable(self.value):
+            eq_list = self.as_equality_list()
+            return Or(eq, eq_list)()
+
+        return eq
 
 
-class Ne(Filter):
-    names = ['ne']
+class Eq(EqualityFilter):
+    operator = '$eq'
+    names = ['eq', 'equals']
 
+    def as_equality_list(self):
+        return In(self.key, self.value)
+
+
+class Ne(EqualityFilter):
+    operator = '$ne'
+    names = ['ne', 'neq', 'noteq', 'notequals']
+
+    def as_equality_list(self):
+        return NotIn(self.key, self.value)
+
+class LimitsFilter(Filter):
     def __call__(self) -> dict[str, dict[str, any]]:
-        return {self.key: {"$ne": self.value}}
+        limit_than = {self.key: {self.operator: self.value}}
+
+        if converters.value_is_numeric(self.value):
+            limit_than_number = {
+                self.key: {
+                    self.operator: converters.value_as_number(self.value)
+                }
+            }
+
+            return Or(limit_than, limit_than_number)()
+
+        return limit_than
 
 
-class Gt(Filter):
+class Gt(LimitsFilter):
+    operator = '$gt'
     names = ['gt']
 
-    def __call__(self) -> dict[str, dict[str, any]]:
-        return {self.key: {"$gt", self.value}}
 
 
-class Gte(Filter):
-    names = ['ge']
-
-    def __call__(self) -> dict[str, dict[str, any]]:
-        return {self.key: {"$gte", self.value}}
+class Ge(LimitsFilter):
+    operator = '$gte'
+    names = ['ge', 'gte']
 
 
-class Lt(Filter):
+class Lt(LimitsFilter):
+    operator = '$lt'
     names = ['lt']
 
-    def __call__(self) -> dict[str, dict[str, any]]:
-        return {self.key: {"$lt", self.value}}
 
-
-class Lte(Filter):
-    names = ['lte']
-
-    def __call__(self) -> dict[str, dict[str, any]]:
-        return {self.key: {"$lte", self.value}}
+class Le(Filter):
+    operator = '$lte'
+    names = ['le', 'lte']
 
 
 class ListFilter(Filter):
-    @property
-    def value__list(self):
-        value = self.value
-        
-        if isinstance(value, list):
-            return value
+    def __call__(self) -> dict[str, dict[str, any]]:
+        or_filter = Or(
+            {
+                self.key: {
+                    self.operator: converters.value_as_list(self.value)
+                }
+            },
+            {
+                self.key: {
+                    self.operator: converters.value_as_list_with_numerics(self.value)
+                }
+            }
+        )
 
-        if isinstance(value, str) and "," in value:
-            return [v for v in value.split(",")]
-        
-        return [value]
-
-    @property
-    def value__list_with_numerics(self):
-        return [utils.to_number(v, default=v) for v in self.value__list]
+        return or_filter()
 
 
 class In(ListFilter):
+    operator = '$in'
     names = ['in']
-
-    def __call__(self) -> dict[str, dict[str, any]]:
-        return {self.key: {"$in": self.value__list}}
 
 
 class NotIn(ListFilter):
+    operator = '$nin'
     names = ['nin', 'notin']
-    
-    def __call__(self) -> dict[str, dict[str, any]]:
-        return {self.key: {"$nin": self.value__list}}
 
 
 class BooleanFilter(Filter):
+    operator = '$exists'
     def __init__(self, key: str, value: bool | int | str = True) -> None:
         super().__init__(key, value)
-
-    @property
-    def value__bool(self):
-        if isinstance(self.value, bool):
-            return self.value
-
-        if isinstance(self.value, (int, float)):
-            return self.value != 0
-
-        if isinstance(self.value, str):
-            value_ = self.value.lower()
-            
-            if value_ in ["true", "yes", "y", "1", ""]:
-                return True    
-            elif value_ in ["false", "no", "n", "0"]:
-                return False
-        
-        raise ValueError(f"'{self.value}' is not a valid boolean value")
 
 
 class Exists(BooleanFilter):
     names = ['exists']
     
     def __call__(self) -> dict[str, dict[str, bool]]:
-        return {self.key: {"$exists": self.value__bool}}
+        return {self.key: {self.operator: converters.value_as_bool(self.value)}}
 
 
 class NotExists(Exists):
     names = ['nexists', 'notexists']
 
     def __call__(self) -> dict[str, dict[str, bool]]:
-        return {self.key: {"$exists": not self.value__bool}}
+        return {self.key: {self.operator: not converters.value_as_bool(self.value)}}
 
 
 class IsNull(BooleanFilter):
@@ -170,7 +178,7 @@ class IsNull(BooleanFilter):
     def __call__(self) -> And:
         is_null = And(
             Exists(self.key, True),
-            (Eq if self.value__bool else Ne)(self.key, None)
+            (Eq if converters.value_as_bool(self.value) else Ne)(self.key, None)
         )
 
         return is_null()
@@ -182,25 +190,22 @@ class IsNotNull(BooleanFilter):
     def __call__(self) -> And:
         is_not_null = And(
             Exists(self.key, True),
-            (Ne if self.value__bool else Eq)(self.key, None)
+            (Ne if converters.value_as_bool(self.value) else Eq)(self.key, None)
         )
 
         return is_not_null()
 
 
 class RegexFilter(Filter):
+    operator = '$regex'
     names = ['re', 'regex']
 
     def __init__(self, key: str, value: str, flags: re.RegexFlag = re.RegexFlag.ASCII) -> None:
         super().__init__(key, value)
         self.flags = flags
 
-    @property
-    def value__pattern(self) -> re.Pattern:
-        return re.compile(self.value, self.flags)
-
     def __call__(self) -> dict[dict[str, re.Pattern]]:
-        return {self.key: {"$regex": self.value__pattern}}
+        return {self.key: {self.operator: converters.value_as_pattern(self.value, self.flags)}}
 
 
 class Contains(RegexFilter):
@@ -217,9 +222,8 @@ class IContains(RegexFilter):
 class StartsWith(RegexFilter):
     names = ['starts', 'startswith']
 
-    @property
-    def value__pattern(self) -> re.Pattern:
-        return re.compile(f"^{self.value}", self.flags)
+    def __call__(self) -> dict[dict[str, re.Pattern]]:
+        return {self.key: {self.operator: converters.value_as_pattern(f"^{self.value}", self.flags)}}
 
 
 class IStartsWith(StartsWith):
@@ -232,9 +236,8 @@ class IStartsWith(StartsWith):
 class EndsWith(RegexFilter):
     names = ['ends', 'endswith']
 
-    @property
-    def value__pattern(self) -> re.Pattern:
-        return re.compile(f"{self.value}$", self.flags)
+    def __call__(self) -> dict[dict[str, re.Pattern]]:
+        return {self.key: {self.operator: converters.value_as_pattern(f"{self.value}$", self.flags)}}
 
 
 class IEndsWith(EndsWith):
