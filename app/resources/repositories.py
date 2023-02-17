@@ -4,7 +4,6 @@ from motor.motor_asyncio import AsyncIOMotorCollection
 from pymongo.results import InsertOneResult, InsertManyResult, DeleteResult
 
 from app.core.dependencies import get_collection, get_collection_version
-from app.filters.facades import F
 
 
 class ResourceRepository:
@@ -16,17 +15,14 @@ class ResourceRepository:
     def versioned(cls, collection: AsyncIOMotorCollection = Depends(get_collection_version)) -> Self:
         return cls(collection)
 
-    async def count(self, filters: dict) -> int:
-        query = F.query(filters)
+    async def count(self, query: dict) -> int:
         return await self.collection.count_documents(query)
 
-    async def list(self, filters: dict, offset: int, limit: int = 30):
-        query = F.query(filters)
+    async def list(self, query: dict, offset: int, limit: int = 30):
         cursor = self.collection.find(query, self.projection)
         return await cursor.skip(offset).to_list(limit)
 
-    async def get(self, id: str) -> dict | None:
-        query = F.find(id)
+    async def get(self, query: dict) -> dict | None:
         return await self.collection.find_one(query, self.projection)
 
     async def insert_many(self, documents: list):
@@ -54,14 +50,12 @@ class ResourceRepository:
             self.insert_many(data) if isinstance(data, list) else self.insert_one(data)
         )
 
-    async def delete_one(self, id: str):
-        query = F.find(id)
+    async def delete_one(self, query: dict):
         return await self.collection.delete_one(query, self.projection)
 
-    async def delete_many(self, filters: dict) -> bool:
-        if not filters:
+    async def delete_many(self, query: dict) -> bool:
+        if not query:
             return await self.collection.drop()
 
-        query = F.query(filters)
         result: DeleteResult = await self.collection.delete_many(query)
         return result.acknowledged

@@ -3,9 +3,10 @@ from fastapi import APIRouter
 from fastapi import Depends, Request, status
 
 from app.core import exceptions
-from app.core.dependencies import get_filters, verify_resource_name
+from app.core.dependencies import verify_resource_name
 from app.resources.repositories import ResourceRepository
 from app.core.schemas import PageRequest, PaginatedResponse
+from app.filters.dependencies import get_filters
 
 
 router = APIRouter(

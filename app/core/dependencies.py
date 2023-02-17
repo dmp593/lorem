@@ -48,7 +48,3 @@ def verify_resource_name(path_index: int) -> typing.Callable[[Request,], None]:
             raise exceptions.Forbidden(f"Invalid resource name: {resource}. Please favor strict alphanumeric characters.")  
     
     return wrapper
-
-
-def get_filters(request: Request) -> dict:
-    return {key: val for key, val in request.query_params.items() if not key.startswith("__")}

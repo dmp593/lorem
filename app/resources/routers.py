@@ -3,9 +3,9 @@ from fastapi import Depends, Request, status
 
 from app.core import exceptions
 from app.resources.repositories import ResourceRepository
-from app.core.dependencies import get_filters, verify_resource_name
+from app.core.dependencies import verify_resource_name
 from app.core.schemas import PageRequest, PaginatedResponse
-
+from app.filters.dependencies import get_filters, get_filter_id
 
 router = APIRouter(
     tags=["resources"],
@@ -14,7 +14,7 @@ router = APIRouter(
 
 
 @router.get("/{resource}")
-async def get_many(filters = Depends(get_filters), page = Depends(PageRequest), repository: ResourceRepository = Depends()):
+async def get_many(filters: dict = Depends(get_filters), page = Depends(PageRequest), repository: ResourceRepository = Depends()):
     documents = await repository.list(filters, page.offset, page.limit)
     total_count = await repository.count(filters)
 
@@ -22,7 +22,7 @@ async def get_many(filters = Depends(get_filters), page = Depends(PageRequest), 
 
 
 @router.get("/{resource}/{id}")
-async def get_one(id: str, repository: ResourceRepository = Depends()):
+async def get_one(id: dict = Depends(get_filter_id), repository: ResourceRepository = Depends()):
     document = await repository.get(id)
 
     if not document:
@@ -38,13 +38,13 @@ async def insert_one_or_many(request: Request, repository: ResourceRepository = 
 
 
 @router.delete("/{resource}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_many(filters = Depends(get_filters), repository: ResourceRepository = Depends()) -> None:
+async def delete_many(filters: dict = Depends(get_filters), repository: ResourceRepository = Depends()) -> None:
     if not await repository.delete_many(filters):
         raise exceptions.BadRequest()
 
 
 @router.delete("/{resource}/{id}", status_code=status.HTTP_204_NO_CONTENT) 
-async def delete_one(id: str, repository: ResourceRepository = Depends()) -> None:
+async def delete_one(id: dict = Depends(get_filter_id), repository: ResourceRepository = Depends()) -> None:
     document = await repository.delete_one(id)
 
     if not document:
