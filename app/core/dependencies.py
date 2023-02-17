@@ -1,12 +1,11 @@
 import os
-import typing
 
 from functools import cache
 
 from fastapi import Depends, Path, Request
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection, AsyncIOMotorDatabase
 
-from app.core import exceptions, tokens
+from app.core import tokens
 
 
 @cache
@@ -38,13 +37,3 @@ def get_collection(resource: str, db: AsyncIOMotorDatabase = Depends(get_db)) ->
 
 def get_collection_version(resource: str, version: int = Path(ge=0), db: AsyncIOMotorDatabase = Depends(get_db)) -> AsyncIOMotorCollection:
     return get_collection(f"@v{version}-{resource}", db)
-
-
-def verify_resource_name(path_index: int) -> typing.Callable[[Request,], None]:
-    def wrapper(request: Request):
-        resource = request.url.path.split('/')[path_index]
-
-        if resource.startswith('@'):
-            raise exceptions.Forbidden(f"Invalid resource name: {resource}. Please favor strict alphanumeric characters.")  
-    
-    return wrapper

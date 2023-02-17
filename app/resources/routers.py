@@ -3,13 +3,13 @@ from fastapi import Depends, Request, status
 
 from app.core import exceptions
 from app.resources.repositories import ResourceRepository
-from app.core.dependencies import verify_resource_name
+from app.core.validators import validate_resource_name
 from app.core.schemas import PageRequest, PaginatedResponse
 from app.filters.dependencies import get_filters, get_filter_id
 
 router = APIRouter(
     tags=["resources"],
-    dependencies=[Depends(verify_resource_name(path_index=1))]
+    dependencies=[Depends(validate_resource_name(path_index=1))]
 )
 
 
