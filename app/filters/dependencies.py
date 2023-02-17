@@ -43,6 +43,9 @@ def get_filters(query_params: dict[str, str] = Depends(get_query_params_filters)
     for entry in query_params.items():
         key, value = entry
 
+        if key.startswith("__"):
+            continue
+
         operator = "eq"
         if "__" in key:
             key, operator = key.rsplit("__", maxsplit=1)
