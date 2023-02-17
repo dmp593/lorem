@@ -6,6 +6,7 @@ from fastapi import Depends, Query, Request
 
 from app.core import exceptions, utils
 from app.filters import models as filters
+from app.filters.exceptions import FilterError, FilterOperatorNotExistsError
 
 
 @cache
@@ -37,11 +38,14 @@ def get_query_params_filters(request: Request) -> dict:
     return {key: val for key, val in request.query_params.items() if not key.startswith("__")}
 
 
-def get_filter_key_and_operator(key: str) -> tuple[str, str]:
+def get_filter_key_and_operator(key: str, registry: dict[str, filters.Filter], raise_if_invalid_operator: bool = True) -> tuple[str, str]:
     operator = "eq" # default if not provided
     
     if "__" in key:
         key, operator = key.rsplit("__", maxsplit=1) # get provided operator
+
+    if operator not in registry and raise_if_invalid_operator:
+        raise FilterOperatorNotExistsError(operator, registry)
 
     return (key, operator)
 
@@ -54,18 +58,13 @@ def get_filters(query_params: dict[str, str] = Depends(get_query_params_filters)
 
         if key.startswith("__"): continue
 
-        key, operator = get_filter_key_and_operator(key)
-
-        if operator not in registry:
-            allowed_operators = ", ".join(registry.keys())
-            raise exceptions.BadRequest(f"Invalid filter operator: '{operator}'. Allowed: {allowed_operators}") # TODO create FilterError
-            
+        key, operator = get_filter_key_and_operator(key, registry, raise_if_invalid_operator=True)
         filter_cls = registry.get(operator)
 
         try:
             filters_ |= filter_cls(key, value)()
-        except ValueError as e: # TODO create FilterError
-            raise exceptions.BadRequest(f"({entry[0]}={entry[1]}) {e}")
+        except ValueError as err:
+            raise FilterError(key=entry[0], value=entry[1], err=err)
 
     return filters_
 
