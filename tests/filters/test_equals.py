@@ -1,4 +1,4 @@
-from app.filters import Eq
+from app.filters.facades import Eq
 
 
 def test_filter_equals():

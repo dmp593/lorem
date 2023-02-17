@@ -1,7 +1,7 @@
 from pydantic import Field
 
-from app.schemas import CamelModel
-from app.token import TOKEN_MIN_LENGTH, TOKEN_MAX_LENGTH
+from app.core.schemas import CamelModel
+from app.core.tokens import TOKEN_MIN_LENGTH, TOKEN_MAX_LENGTH
 
 
 class TokenRequest(CamelModel):

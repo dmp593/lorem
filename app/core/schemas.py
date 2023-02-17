@@ -1,6 +1,12 @@
-from pydantic import Field
+import humps
 
-from app.schemas import CamelModel
+from pydantic import BaseModel, Field
+
+
+class CamelModel(BaseModel):
+    class Config:
+        alias_generator = humps.camelize
+        allow_population_by_field_name = True
 
 
 class PageRequest(CamelModel):

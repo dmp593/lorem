@@ -1,4 +1,4 @@
-from app.filters import In
+from app.filters.facades import In
 
 
 def test_filter_in():

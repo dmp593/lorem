@@ -4,7 +4,7 @@ import string
 
 from fastapi.datastructures import Headers
 
-from app import exceptions
+from app.core import exceptions
 
 
 TOKEN_CHARACTERS: str = string.ascii_letters + string.digits
@@ -41,27 +41,27 @@ def extract(headers: Headers):
             stop = host.index(".")
             token = host[:stop]
 
-    validate(token, raise_error=True)
+    validate(token, raise_if_invalid=True)
 
     return token
 
 
-def validate(token: str, raise_error: bool = True) -> bool:
+def validate(token: str, raise_if_invalid: bool = True) -> bool:
     if not isinstance(token, str):
         raise exceptions.Unauthorized("Invalid Token: not provided")
     
     token_len = len(token)
 
     if token_len < TOKEN_MIN_LENGTH:
-        if not raise_error: return False
+        if not raise_if_invalid: return False
         raise exceptions.Unauthorized(f"Invalid Token: minimum length is {TOKEN_MIN_LENGTH} characters")
 
     if token_len > TOKEN_MAX_LENGTH:
-        if not raise_error: return False
+        if not raise_if_invalid: return False
         raise exceptions.Unauthorized(f"Invalid Token: maximum length is {TOKEN_MAX_LENGTH} characters")
 
     if not re.match(TOKEN_RE_PATTERN, token):
-        if not raise_error: return False
+        if not raise_if_invalid: return False
         raise exceptions.Unauthorized("Invalid Token: only alphanumeric characters are allowed")
 
     return True
