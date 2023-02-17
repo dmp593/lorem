@@ -119,7 +119,7 @@ class Lt(LimitsFilter):
     names = ['lt']
 
 
-class Le(Filter):
+class Le(LimitsFilter):
     operator = '$lte'
     names = ['le', 'lte']
 
