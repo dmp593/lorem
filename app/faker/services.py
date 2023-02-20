@@ -39,7 +39,14 @@ class FakerService:
 
     def fake(self, schema: any) -> any:
         if isinstance(schema, str) and schema.startswith('@'):
-            return getattr(self, schema[1:])
+            paths = schema[1:].split('.')
+
+            value = getattr(self, paths[0])
+
+            for path in paths[1:]:
+                value = value.get(path)
+
+            return value
 
         if isinstance(schema, list):
             return self.fake_list(schema)
