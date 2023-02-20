@@ -10,10 +10,13 @@ router = APIRouter(prefix="/@faker", tags=["faker"])
 
 @router.post("/", status_code=status.HTTP_200_OK)
 async def plan(request: Request, faker: FakerService = Depends()):
-    return faker.fake(await request.json())
+    json = await request.json()
+    return faker.fake(json)
 
 
 @router.post("/{resource}", status_code=status.HTTP_200_OK, dependencies=[Depends(validate_resource_name(path_index=2))])
 async def apply(request: Request, faker: FakerService = Depends(), repository: ResourceRepository = Depends()):
-    faked = faker.fake(await request.json())
+    json = await request.json()
+    faked = faker.fake(json)
+    
     return await repository.insert_one_or_many(faked)
