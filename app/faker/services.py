@@ -1,9 +1,10 @@
 import itertools
+import operator
 
 from humps import decamelize as snakelize
 
 from faker import Faker
-from typing import Any
+from typing import Any, Union
 
 
 class FakerService:
@@ -12,11 +13,31 @@ class FakerService:
 
     @property
     def username(self) -> str:
-        return self.faker.simple_profile.username()
+        return self.faker.simple_profile().get('username')
+    
+    @property
+    def bool(self) -> bool:
+        return self.faker.pybool()
+    
+    @property
+    def boolean(self) -> bool:
+        return self.bool
 
-    @property 
-    def profile(self) -> dict:
-        return self.fake.simple_profile
+    @property
+    def int(self) -> int:
+        return self.faker.pyint()
+
+    @property
+    def integer(self) -> int:
+        return self.int
+
+    @property
+    def float(self) -> int:
+        return self.faker.pyfloat()
+
+    @property
+    def number(self) -> Union[int, float]:
+        return self.int if self.bool else self.float
 
     def __getattr__(self, __name: str) -> Any:
         return getattr(self.faker, __name)()
@@ -64,6 +85,27 @@ class FakerService:
             
             return output
 
+        if not len(faked):
+            return faked
+
+        if isinstance(faked[0], str):
+            return each.get('separator', ', ').join(faked)
+    
+        if isinstance(faked[0], (int, float)):
+            match each.get('operator', '+'):
+                case '+' | 'add':
+                    return list(itertools.accumulate(faked, operator.add))[-1]
+                case '-' | 'sub' | 'subtract':
+                    return list(itertools.accumulate(faked, operator.sub))[-1]
+                case 'x' | '*' | 'mul' | 'multiply':
+                    return list(itertools.accumulate(faked, operator.mul))[-1]
+                case '/' | 'div' | 'divide':
+                    return list(itertools.accumulate(faked, operator.truediv))[-1] if 0 not in faked else "error: division by zero"
+                # case '**' | 'pow' | 'power':
+                #     return list(itertools.accumulate(faked, operator.pow))[-1]
+                case '%' | 'mod' | 'modulus':
+                    return list(itertools.accumulate(faked, operator.mod))[-1]
+        
         return faked
 
     def fake(self, schema: any) -> any:
