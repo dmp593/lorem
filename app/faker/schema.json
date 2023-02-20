@@ -1,0 +1,35 @@
+[
+    {
+        "@each": {
+            "schema": {
+    
+            },
+            "count": 10
+        }
+    },
+    {
+        "model": "tesla",
+        "year": 2021
+    },
+    {
+        "name": "@name",
+        "equipments": [
+            {
+                "type": "car",
+                "year": 2019
+            },
+            {
+                "type": "computer",
+                "brand": "apple"
+            },
+            {
+                "@each": {
+                    "schema": {
+
+                    },
+                    "count": 10
+                }
+            }
+        ]
+    }
+]
