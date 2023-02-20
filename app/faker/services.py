@@ -1,5 +1,7 @@
 import itertools
 
+from humps import decamelize as snakelize
+
 from faker import Faker
 from typing import Any
 
@@ -11,6 +13,10 @@ class FakerService:
     @property
     def username(self) -> str:
         return self.faker.simple_profile.username()
+
+    @property 
+    def profile(self) -> dict:
+        return self.fake.simple_profile
 
     def __getattr__(self, __name: str) -> Any:
         return getattr(self.faker, __name)()
@@ -62,6 +68,7 @@ class FakerService:
 
     def fake(self, schema: any) -> any:
         if isinstance(schema, str) and schema.startswith('@'):
+            schema = snakelize(schema)
             paths = schema[1:].split('.')
 
             value = getattr(self, paths[0])

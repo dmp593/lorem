@@ -54,8 +54,5 @@ class ResourceRepository:
         return await self.collection.delete_one(query, self.projection)
 
     async def delete_many(self, query: dict) -> bool:
-        if not query:
-            return await self.collection.drop()
-
         result: DeleteResult = await self.collection.delete_many(query)
         return result.acknowledged
