@@ -1,5 +1,7 @@
-from typing import Any
+import itertools
+
 from faker import Faker
+from typing import Any
 
 
 class FakerService:
@@ -28,14 +30,35 @@ class FakerService:
         return elements
 
     def fake_dict(self, schema: dict) -> dict | list:
-        if '@each' in schema:
-            each = schema.get('@each')
-            schema = each.get('schema', {})
-            count = each.get('count', 1)
+        if '@each' not in schema:
+            return { self.fake(key): self.fake(val) for key, val in schema.items() }
 
-            return self.fake_list([schema for _ in range(count)])
+        each = schema.get('@each')
+            
+        schema = each.get('schema', {})
+        count = each.get('count', 1)
+        embeded = each.get('embeded', False)
+
+        faked = []
+
+        for _ in range(count):
+            faked.append(self.fake(schema))
+
+        if not embeded:
+            return faked
+
+        if isinstance(schema, list):
+                return list(itertools.chain(*faked))
         
-        return { self.fake(key): self.fake(val) for key, val in schema.items() }
+        if isinstance(schema, dict):
+            output = {}
+
+            for element in faked:
+                output |= element
+            
+            return output
+
+        return faked
 
     def fake(self, schema: any) -> any:
         if isinstance(schema, str) and schema.startswith('@'):
