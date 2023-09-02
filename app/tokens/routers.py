@@ -13,10 +13,10 @@ async def generate(request: TokenRequest, client: AsyncIOMotorClient = Depends(d
     cursor = await client.list_databases()
     cursor_coroutine = cursor.to_list(length=None)
     
-    new_token = tokens.validators.generate(request.length)
+    new_token = tokens.generate(request.length)
     dbs = await cursor_coroutine
     
     while new_token in dbs:
-        new_token = tokens.validators.generate(request.length)
+        new_token = tokens.generate(request.length)
     
     return TokenResponse(token=new_token)

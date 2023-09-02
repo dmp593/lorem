@@ -1,6 +1,7 @@
 import os
 
 from functools import cache
+from urllib.parse import quote_plus
 
 from fastapi import Depends, Path, Request
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection, AsyncIOMotorDatabase
@@ -10,8 +11,8 @@ from app.core import tokens
 
 @cache
 def get_mongodb_connection_str() -> str:
-    username: str | None = os.environ.get("DB_USER", None)
-    password: str| None = os.environ.get("DB_PASS", None)
+    username: str | None = quote_plus(os.environ.get("DB_USER", None))
+    password: str| None = quote_plus(os.environ.get("DB_PASS", None))
     host: str = os.environ.get("DB_HOST", "localhost")
     port: str = os.environ.get("DB_PORT", "27017")
 
