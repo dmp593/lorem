@@ -13,7 +13,8 @@ RUN apk add --no-cache ca-certificates tzdata && update-ca-certificates
 WORKDIR /lorem
 
 # Install requirements
-RUN pip install -r requirements.txt
+COPY requirements.txt ./requirements.txt
+RUN pip install -r ./requirements.txt
 
 # Copies the project folder
 COPY ./app ./app

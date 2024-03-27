@@ -1,0 +1,11 @@
+.github/
+.pytest_cache/
+.venv/
+data/
+tests/
+.env
+.env.*
+.gitignore
+Dockerfile.*
+poetry.lock
+README.md
