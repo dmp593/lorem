@@ -7,5 +7,4 @@ tests/
 .env.*
 .gitignore
 Dockerfile.*
-poetry.lock
 README.md

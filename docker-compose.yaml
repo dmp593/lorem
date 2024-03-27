@@ -35,7 +35,7 @@ services:
     depends_on:
       - mongo
     ports:
-      - "8000:80"
+      - "8008:80"
     entrypoint: uvicorn app.main:app --host 0.0.0.0 --port 80 --reload
 
   api-prod:
