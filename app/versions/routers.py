@@ -6,7 +6,7 @@ from app.core import exceptions
 from app.core.validators import validate_resource_name
 from app.resources.repositories import ResourceRepository
 from app.core.schemas import PageRequest, PaginatedResponse
-from app.filters.dependencies import get_filters
+from app.filters.dependencies import get_filters, get_filter_id
 
 
 router = APIRouter(
@@ -17,7 +17,7 @@ router = APIRouter(
 
 
 @router.get("{version:int}/{resource}")
-async def get_many(filters = Depends(get_filters), page = Depends(PageRequest), repository: ResourceRepository = Depends(ResourceRepository.versioned)):
+async def get_many(filters: dict = Depends(get_filters), page = Depends(PageRequest), repository: ResourceRepository = Depends(ResourceRepository.versioned)):
     documents = await repository.list(filters, page.offset, page.limit)
     total_count = await repository.count(filters)
 
@@ -25,7 +25,7 @@ async def get_many(filters = Depends(get_filters), page = Depends(PageRequest), 
 
 
 @router.get("{version:int}/{resource}/{id}")
-async def get_one(id: str, repository: ResourceRepository = Depends(ResourceRepository.versioned)):
+async def get_one(id: dict = Depends(get_filter_id), repository: ResourceRepository = Depends(ResourceRepository.versioned)):
     document = await repository.get(id)
 
     if not document:
@@ -47,7 +47,7 @@ async def delete_many(filters = Depends(get_filters), repository: ResourceReposi
 
 
 @router.delete("{version:int}/{resource}/{id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_one(id: str, repository: ResourceRepository = Depends(ResourceRepository.versioned)) -> None:
+async def delete_one(id: dict = Depends(get_filter_id), repository: ResourceRepository = Depends(ResourceRepository.versioned)) -> None:
     document = await repository.delete_one(id)
 
     if not document:
