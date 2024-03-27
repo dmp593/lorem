@@ -12,7 +12,7 @@ class TokenResponse(CamelModel):
     token: str
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "token": "my-generated-str0ng-tøken"
             }

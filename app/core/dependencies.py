@@ -12,7 +12,7 @@ from app.core import tokens
 @cache
 def get_mongodb_connection_str() -> str:
     username: str | None = quote_plus(os.environ.get("DB_USER", None))
-    password: str| None = quote_plus(os.environ.get("DB_PASS", None))
+    password: str | None = quote_plus(os.environ.get("DB_PASS", None))
     host: str = os.environ.get("DB_HOST", "localhost")
     port: str = os.environ.get("DB_PORT", "27017")
 

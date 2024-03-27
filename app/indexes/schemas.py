@@ -31,8 +31,8 @@ class IndexRequest(BaseModel):
         return keys
 
     class Config:
-        orm_mode = True
-        schema_extra = {
+        from_attributes = True
+        json_schema_extra = {
             "example": {
                 "keys": {
                     "username": "asc"

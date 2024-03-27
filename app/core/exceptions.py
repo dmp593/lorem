@@ -1,7 +1,7 @@
 from fastapi import exceptions, status
 
 
-Headers =  dict[str, any] | None
+Headers = dict[str, any] | None
 
 
 class BadRequest(exceptions.HTTPException):

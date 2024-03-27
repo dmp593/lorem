@@ -69,7 +69,7 @@ def get_filters(query_params: dict[str, str] = Depends(get_query_params_filters)
     return applied_filters
 
 
-def get_filter_id(id: str | int | float = Query(), ids_keys_candidates: tuple[str] = Depends(get_ids_keys_candidates)) -> dict:
+def get_filter_id(id: str | int | float, ids_keys_candidates: tuple[str] = Depends(get_ids_keys_candidates)) -> dict:
     filter_id = filters.Or()
 
     for key in ids_keys_candidates:
