@@ -1,4 +1,13 @@
-FROM python:slim
+FROM python:alpine
+
+ARG UID=1000
+ARG GID=1000
+
+# Create user (UID) "lorem" and group (GID) "lorem"
+RUN addgroup -S -g ${GID} lorem && adduser -S -u ${UID} -G lorem lorem
+
+# Get the latest root certificates
+RUN apk add --no-cache ca-certificates tzdata && update-ca-certificates
 
 # Create a Lorem Home Directory
 WORKDIR /lorem
@@ -11,6 +20,9 @@ COPY ./app ./app
 
 # Export port 80 to host
 EXPOSE 80
+
+# Sets the Default User
+USER lorem
 
 # Serves our App with uvicorn
 ENTRYPOINT uvicorn app.main:app -w 4 --host 0.0.0.0 --port 80

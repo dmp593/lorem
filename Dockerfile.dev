@@ -31,4 +31,4 @@ COPY ./app ./app
 EXPOSE 80
 
 # Serves our App with uvicorn
-ENTRYPOINT uvicorn app.main:app -w 4 --host 0.0.0.0 --port 80
+ENTRYPOINT uvicorn app.main:app --host 0.0.0.0 --port 80 --reload
