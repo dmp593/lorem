@@ -21,7 +21,9 @@ services:
     depends_on:
       - mongo
   api:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
     restart: unless-stopped
     volumes:
       - ./app:/lorem/app:ro

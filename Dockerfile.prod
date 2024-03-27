@@ -1,0 +1,16 @@
+FROM python:slim
+
+# Create a Lorem Home Directory
+WORKDIR /lorem
+
+# Install requirements
+RUN pip install -r requirements.txt
+
+# Copies the project folder
+COPY ./app ./app
+
+# Export port 80 to host
+EXPOSE 80
+
+# Serves our App with uvicorn
+ENTRYPOINT uvicorn app.main:app -w 4 --host 0.0.0.0 --port 80
