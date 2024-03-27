@@ -2,7 +2,7 @@ import inspect
 
 from functools import cache
 
-from fastapi import Depends, Query, Request
+from fastapi import Depends, Request, Path
 
 from app.core import exceptions, utils
 from app.filters import models as filters
@@ -69,7 +69,7 @@ def get_filters(query_params: dict[str, str] = Depends(get_query_params_filters)
     return applied_filters
 
 
-def get_filter_id(id: str | int | float, ids_keys_candidates: tuple[str] = Depends(get_ids_keys_candidates)) -> dict:
+def get_filter_id(id: str | int | float = Path(), ids_keys_candidates: tuple[str] = Depends(get_ids_keys_candidates)) -> dict:
     filter_id = filters.Or()
 
     for key in ids_keys_candidates:

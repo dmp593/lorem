@@ -12,7 +12,7 @@ def value_as_number(value: str | int | float) -> int | float:
 
 
 def value_is_listable(value: str | list) -> list[any]:
-    return isinstance(value, list) or (isinstance(value, str) and "," in str)
+    return isinstance(value, list) or (isinstance(value, str) and "," in value)
 
 
 def value_as_list(value: str | list) -> list[any]:
