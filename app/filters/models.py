@@ -126,6 +126,13 @@ class Le(LimitsFilter):
 
 class ListFilter(Filter):
     def __call__(self) -> dict[str, dict[str, any]]:
+        if not converters.value_is_listable_with_numerics(self.value):
+            return {
+                self.key: {
+                    self.operator: converters.value_as_list(self.value)
+                }
+            }
+        
         or_filter = Or(
             {
                 self.key: {

@@ -1,4 +1,4 @@
-from app.filters.facades import Filter
+from app.filters.models import Filter
 
 
 def test_filter():

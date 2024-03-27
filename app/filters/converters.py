@@ -15,6 +15,15 @@ def value_is_listable(value: str | list) -> list[any]:
     return isinstance(value, list) or (isinstance(value, str) and "," in value)
 
 
+def value_is_listable_with_numerics(value: str | list) -> bool:
+    if not value_is_listable(value):
+        return False
+    
+    list_of_values: list = value_as_list_with_numerics(value)
+
+    return any(map(lambda v: isinstance(v, (int, float)), list_of_values))
+
+
 def value_as_list(value: str | list) -> list[any]:
     if isinstance(value, list):
         return value

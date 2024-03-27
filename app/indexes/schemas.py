@@ -1,16 +1,28 @@
 import pymongo
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator, ValidationInfo
 
 
 class IndexRequest(BaseModel):
     keys: dict[str, str | int] | list[str]
     unique: bool
 
-    @validator("keys")
-    def keys_ascending_or_descending(cls, keys):
+    model_config = {
+        "from_attributes": True,
+        "json_schema_extra": {
+            "example": {
+                "keys": {
+                    "username": "asc"
+                },
+                "unique": True
+            }
+        }
+    }
+
+    @field_validator("keys")
+    def keys_ascending_or_descending(cls, keys, info: ValidationInfo):
         if isinstance(keys, list):
-            return { key: pymongo.ASCENDING for key in keys }
+            return {key: pymongo.ASCENDING for key in keys}
 
         for key, order in keys.items():
             match order.lower():
@@ -29,14 +41,3 @@ class IndexRequest(BaseModel):
                 case _:
                     raise ValueError(f"Invalid index configuration: {key} -> {order}")
         return keys
-
-    class Config:
-        from_attributes = True
-        json_schema_extra = {
-            "example": {
-                "keys": {
-                    "username": "asc"
-                },
-                "unique": True
-            }
-        }

@@ -1,4 +1,5 @@
-from app.filters.facades import Eq, And
+from app.filters.models import Eq, And
+
 
 def test_filter_and():
     filters = [

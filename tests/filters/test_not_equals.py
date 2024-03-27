@@ -1,4 +1,4 @@
-from app.filters.facades import Ne
+from app.filters.models import Ne
 
 
 def test_filter_not_equals():
