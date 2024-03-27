@@ -4,7 +4,7 @@ on:
   push:
     tags: ["v*.*.*"]
   pull_request:
-    tags: ["v*.*.*"]
+    branches: ["main"]
 
 env:
   REGISTRY: ghcr.io
@@ -33,8 +33,7 @@ jobs:
         run: poetry install --no-interaction --with=dev
       
       - name: Test with pytest
-        run: |
-          pytest tests
+        run: poetry run pytest tests
           
   build:
 
