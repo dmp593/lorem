@@ -35,21 +35,5 @@ services:
     depends_on:
       - mongo
     ports:
-      - "8008:80"
-    entrypoint: uvicorn app.main:app --host 0.0.0.0 --port 80 --reload
-
-  api-prod:
-    image: ghcr.io/dmp593/lorem:latest
-    restart: unless-stopped
-    volumes:
-      - ./app:/lorem/app:ro
-    environment:
-      DB_USER: ${DB_USER:-admin}
-      DB_PASS: ${DB_PASS:-p@swd}
-      DB_HOST: ${DB_HOST:-mongo}
-      DB_PORT: ${DB_PORT:-27017}
-    depends_on:
-      - mongo
-    ports:
       - "8000:80"
     entrypoint: uvicorn app.main:app --host 0.0.0.0 --port 80 --reload
